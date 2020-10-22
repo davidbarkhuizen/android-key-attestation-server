@@ -1,18 +1,95 @@
 # indrajala-fluid-server
+
 fluid server
 
+
+## cryptography
+
+### (public key) cert formats
+
+PEM
+b64-encoded with begin cert header and end cert trailer
+parser: https://www.sslshopper.com/certificate-decoder.html
+
+DER
+ASN.1 binary
+parser: https://lapo.it/asn1js (hex format)
+
+### Soft HSM
+
+PKCS#11 compliant software HSM from OpenDNSSec
+
+https://www.opendnssec.org/softhsm/
+
+#### build & install
+
+install build dependencies
 ```
-val cert = ks.getCertificate(ROOT_KEY_ALIAS)
-val hex = cert.encoded.toHexString())
-val b64 = Base64.encodeToString(cert.encoded, Base64.NO_WRAP).toString())
+sudo apt install automake autoconf libtool
 ```
 
-hex
+clone git repo
+```
+git clone https://github.com/opendnssec/SoftHSMv2.git
+```
 
-b64
+change current working dir to repo root
+```
+cd SoftHSMv2
+```
 
-https://www.sslshopper.com/certificate-decoder.html
+execute autogen.sh script
+```
+SoftHSMv2 $ ./autogen.sh
+```
 
-parse ASN.1 DER in hex format
-https://lapo.it/asn1js
+configure the build & installation scripts
+```
+SoftHSMv2 $./configure
+```
+
+compile
+```
+SoftHSMv2 $ ./make
+```
+
+os install
+```
+SoftHSMv2 $ sudo make install
+```
+
+#### configure
+
+default location of configuration file
+```
+/etc/softhsm2.conf
+```
+
+the location of the config file is itself configurable via environment variable
+```
+export SOFTHSM2_CONF=/home/user/config.file
+```
+
+#### location of SoftHSM2 pkcs11 module
+
+ubuntu
+```
+/local/lib/softhsm/libsofthsm2.so
+```
+
+### pkcs11-tool
+
+install as part of opensc
+```
+sudo apt install opensc
+```
+
+
+
+
+
+
+
+
+
 
