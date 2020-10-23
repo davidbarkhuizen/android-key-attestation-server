@@ -1,2 +1,4 @@
-fluid-server/target/debug/***
-fluid-server/target/rls/***
+rust/fluid-server/target/debug/***
+rust/fluid-server/target/rls/***
+
+node/node_modules

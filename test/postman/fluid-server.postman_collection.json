@@ -1,0 +1,16 @@
+{
+	"info": {
+		"_postman_id": "3b62fdba-f58f-4c4f-8847-97e4c9ad4730",
+		"name": "fluid-server",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [],
+	"variable": [
+		{
+			"id": "acdfd911-7141-415b-b847-f10098a6ca98",
+			"key": "PORT",
+			"value": "8777"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

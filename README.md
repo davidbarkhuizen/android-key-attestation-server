@@ -1,19 +1,20 @@
 # indrajala-fluid-server
 
-fluid server
+## glossary
 
+token|meaning
+-----|-------
+PEM|privacy enhanced mail
+SO|security officer
 
 ## cryptography
 
 ### (public key) cert formats
 
-PEM
-b64-encoded with begin cert header and end cert trailer
-parser: https://www.sslshopper.com/certificate-decoder.html
-
-DER
-ASN.1 binary
-parser: https://lapo.it/asn1js (hex format)
+format|description|online parser
+------|-----------|-------------
+PEM|b64-encoded with begin cert header and end cert trailer|sslshopper.com/certificate-decoder.html
+DER|ASN.1 binary|lapo.it/asn1js
 
 ### Soft HSM
 
@@ -58,7 +59,7 @@ os install
 SoftHSMv2 $ sudo make install
 ```
 
-#### configure
+#### configuration
 
 default location of configuration file
 ```
@@ -70,26 +71,90 @@ the location of the config file is itself configurable via environment variable
 export SOFTHSM2_CONF=/home/user/config.file
 ```
 
-#### location of SoftHSM2 pkcs11 module
-
-ubuntu
+softhsm2.conf
 ```
-/local/lib/softhsm/libsofthsm2.so
+directories.tokendir = /var/lib/softhsm/tokens/
+```
+
+#### location of SoftHSM2 pkcs11 module
+  
+```
+SoftHSMv2/src/lib/.libs/libsofthsm2.so
 ```
 
 ### pkcs11-tool
 
-install as part of opensc
+pkcs11-tool is a pkcs#11 compliant CLI client for smartcard-type devices implementing security token functionality, and is packaged as part of open-smartcard (opensc ubuntu apt packaqe)
+
 ```
 sudo apt install opensc
 ```
 
+list slots
+```
+$ pkcs11-tool -L --module ~/code/SoftHSMv2/src/lib/.libs/libsofthsm2.so
+Available slots:
+Slot 0 (0x0): SoftHSM slot ID 0x0
+  token state:   uninitialized
+```
+
+initialize slot 0 of token, manually settting SO pin (12345678)
+```
+$ pkcs11-tool --slot 0 --init-token --label fluid --module ~/code/SoftHSMv2/src/lib/.libs/libsofthsm2.so
+ease enter the new SO PIN: 
+Please enter the new SO PIN (again): 
+Token successfully initialized
+```
+
+get basic info on HSM using --show-info
+```
+$ pkcs11-tool --show-info --module ~/code/SoftHSMv2/src/lib/.libs/libsofthsm2.so
+Cryptoki version 2.40
+Manufacturer     SoftHSM
+Library          Implementation of PKCS11 (ver 2.6)
+Using slot 0 with a present token (0x48e10a4b)
+```
+
+rescan the module after slot 0 has been initialized
+```
+ $ pkcs11-tool -L --module ~/code/SoftHSMv2/src/lib/.libs/libsofthsm2.so
+Available slots:
+Slot 0 (0x48e10a4b): SoftHSM slot ID 0x48e10a4b
+  token label        : fluid
+  token manufacturer : SoftHSM project
+  token model        : SoftHSM v2
+  token flags        : login required, rng, token initialized, other flags=0x20
+  hardware version   : 2.6
+  firmware version   : 2.6
+  serial num         : 0daa9668c8e10a4b
+  pin min/max        : 4/255
+Slot 1 (0x1): SoftHSM slot ID 0x1
+  token state:   uninitialized
+```
+
+get a list of supported operations by key parameters
+```
+$ pkcs11-tool --list-mechanisms --slot 0 --module ~/code/SoftHSMv2/src/lib/.libs/libsofthsm2.so
+...
+RSA-PKCS, keySize={512,16384}, encrypt, decrypt, sign, verify, wrap, unwrap
+RSA-PKCS-KEY-PAIR-GEN, keySize={512,16384}, generate_key_pair
+RSA-PKCS-OAEP, keySize={512,16384}, encrypt, decrypt, wrap, unwrap
+RSA-PKCS-PSS, keySize={512,16384}, sign, verify
+RSA-X-509, keySize={512,16384}, encrypt, decrypt, sign, verify
+...
+SHA512-HMAC, keySize={64,512}, sign, verify
+SHA512-RSA-PKCS, keySize={512,16384}, sign, verify
+SHA512-RSA-PKCS-PSS, keySize={512,16384}, sign, verify
+...
+```
+
+create user with PIN
+```
+$ pkcs11-tool --slot 0x48e10a4b --init-pin --module ~/code/SoftHSMv2/src/lib/.libs/libsofthsm2.so
+```
 
 
-
-
-
-
+ pkcs11-tool --module ~/code/SoftHSMv2/src/lib/.libs/libsofthsm2.so --login --login-type so --keypairgen --id 1 --key-type RSA:2048
 
 
 

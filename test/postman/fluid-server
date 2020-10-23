@@ -1,0 +1,14 @@
+{
+	"id": "51e0c3fd-38da-4666-9a6d-26df8019b49e",
+	"name": "fluid-server",
+	"values": [
+		{
+			"key": "port",
+			"value": "8777",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2020-10-22T18:42:10.248Z",
+	"_postman_exported_using": "Postman/7.34.0"
+}
