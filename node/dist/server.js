@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const device_controller_1 = require("./device.controller");
 const root_controller_1 = require("./root.controller");
 const util_1 = require("./util");
+require('source-map-support').install();
 const configure = () => ({
     port: process.env.FLUID_SERVER_PORT
 });

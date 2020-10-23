@@ -5,6 +5,8 @@ import { router as deviceRouter } from './device.controller';
 import { router as rootRouter } from './root.controller';
 import { getIpByInterface } from './util';
 
+require('source-map-support').install();
+
 interface IConfigurationData {
     port: string;
 }
