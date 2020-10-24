@@ -1,20 +1,32 @@
 import { default as express } from 'express';
-import * as asn1js from 'asn1js';
-import { Certificate } from 'pkijs';
+import * as forge from 'node-forge';
 
 export const router = express.Router();
 
 router.post('/register', function (req, res) {
 
     console.log('registering device...');
+    
+    console.log(req.body.asn1hex);
 
-    const raw = new Uint8Array(Buffer.from(req.body.asn1hex, 'hex')).buffer;
+    // ---------------------------------------------------------------
 
-    const asn1 = asn1js.fromBER(raw);
-    console.log('asn1', asn1);
+    var certAsn1 = forge.asn1.fromDer(Buffer.from(req.body.asn1hex, 'hex').toString('binary'));
+    var cert = forge.pki.certificateFromAsn1(certAsn1);
 
-    const certificate = new Certificate({ schema: asn1.result });
-    console.log(certificate);
+    const issuerCN = cert.issuer.getField('CN').value;
+    const subjectCN = cert.subject.getField('CN').value;
 
-    res.send('registered!');
+    const description = [
+        `issuer ${issuerCN}`, 
+        `subject ${subjectCN}`, 
+        `SN ${cert.serialNumber}`, 
+        `valid: ${cert.validity.notBefore} - ${cert.validity.notAfter}`
+    ];
+    
+    console.log(description.join('\n'));
+
+    console.log(cert.subject.attributes);
+
+    res.send('device registration incomplete - not yet implemented');
 });

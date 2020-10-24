@@ -24,24 +24,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.router = void 0;
 const express_1 = __importDefault(require("express"));
-const forge = __importStar(require("node-forge"));
+const asn1js = __importStar(require("asn1js"));
+const pkijs_1 = require("pkijs");
 exports.router = express_1.default.Router();
 exports.router.post('/register', function (req, res) {
     console.log('registering device...');
-    console.log(req.body.asn1hex);
-    // ---------------------------------------------------------------
-    var certAsn1 = forge.asn1.fromDer(Buffer.from(req.body.asn1hex, 'hex').toString('binary'));
-    var cert = forge.pki.certificateFromAsn1(certAsn1);
-    const issuerCN = cert.issuer.getField('CN').value;
-    const subjectCN = cert.subject.getField('CN').value;
-    const description = [
-        `issuer ${issuerCN}`,
-        `subject ${subjectCN}`,
-        `SN ${cert.serialNumber}`,
-        `valid: ${cert.validity.notBefore} - ${cert.validity.notAfter}`
-    ];
-    console.log(description.join('\n'));
-    console.log(cert.subject.attributes);
-    res.send('device registration incomplete - not yet implemented');
+    const raw = new Uint8Array(Buffer.from(req.body.asn1hex, 'hex')).buffer;
+    const asn1 = asn1js.fromBER(raw);
+    // console.log('asn1', asn1);
+    const certificate = new pkijs_1.Certificate({ schema: asn1.result });
+    console.log('Certificate Serial Number');
+    console.log(Buffer.from(certificate.serialNumber.valueBlock.valueHex).toString("hex"));
+    console.log('Certificate Issuance');
+    console.log(certificate.notBefore.value.toString());
+    console.log('Certificate Expiry');
+    console.log(certificate.notAfter.value.toString());
+    console.log(certificate.issuer);
+    res.send('registered!');
 });
-//# sourceMappingURL=device.controller.js.map
+//# sourceMappingURL=pkis_example.js.map

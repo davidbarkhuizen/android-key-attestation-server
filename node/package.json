@@ -18,7 +18,7 @@
   "devDependencies": {
     "@types/asn1js": "0.0.2",
     "@types/express": "^4.17.8",
-    "@types/pkcs11js": "^1.0.4",
+    "@types/node-forge": "^0.9.5",
     "cross-env": "^7.0.2",
     "nodemon": "^2.0.6",
     "source-map-support": "^0.5.19",
@@ -30,7 +30,7 @@
     "asn1js": "^2.0.26",
     "crossenv": "0.0.2-security",
     "express": "^4.17.1",
-    "pkcs11js": "^1.0.22",
+    "node-forge": "^0.10.0",
     "pkijs": "^2.1.90"
   }
 }
