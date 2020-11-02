@@ -2,20 +2,15 @@
 
 #[macro_use] extern crate rocket;
 
+mod controllers;
+mod model;
+
+use crate::device::device::static_rocket_route_info_for_register_init;
+use controllers::device;
+
 use rocket_contrib::json::Json;
 use serde::Deserialize;
 use serde::Serialize;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct PublicKey {
-    subject: String
-}
-
-#[post("/register", format="application/json", data = "<key>")]
-fn register(key: Json<PublicKey>) -> String {
-    //println!("{0}", key.subject)
-    format!("{}", &key.subject)
-}
 
 #[get("/")]
 fn index() -> &'static str {
@@ -23,5 +18,5 @@ fn index() -> &'static str {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![index]).launch();
+    rocket::ignite().mount("/", routes![index, register_init]).launch();
 }
