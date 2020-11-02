@@ -5,9 +5,7 @@
 mod controllers;
 mod model;
 
-use crate::device::device::static_rocket_route_info_for_register_init;
-use controllers::device;
-
+use crate::controllers::device::device::static_rocket_route_info_for_register_init;
 use rocket_contrib::json::Json;
 use serde::Deserialize;
 use serde::Serialize;
