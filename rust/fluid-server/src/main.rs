@@ -2,6 +2,8 @@
 
 #[macro_use] extern crate rocket;
 
+extern crate rand;
+
 mod controllers;
 mod model;
 
@@ -10,11 +12,17 @@ use rocket_contrib::json::Json;
 use serde::Deserialize;
 use serde::Serialize;
 
+use rand::Rng;
+
 #[get("/")]
 fn index() -> &'static str {
     "indrajala fluid server"
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![index, register_init]).launch();
+
+    rocket::ignite()
+        .mount("/", routes![index])
+        .mount("/device", routes![register_init])
+        .launch();
 }
