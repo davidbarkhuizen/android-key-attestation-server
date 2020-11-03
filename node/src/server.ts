@@ -1,23 +1,23 @@
 import { default as express } from 'express';
 import { Express } from 'express-serve-static-core';
+import { configure, IConfigurationData } from './config';
 
-import { router as deviceRouter } from './device.controller';
-import { router as rootRouter } from './root.controller';
-import { getIpByInterface } from './util';
+import { router as deviceRouter } from './controller/device';
+import { router as rootRouter } from './controller/root';
+import { getIpsForInterfaces } from './util';
 
+// DEBUG
+//
 require('source-map-support').install();
 
-interface IConfigurationData {
-    port: string;
-}
-
-const configure = (): IConfigurationData => ({
-    port: process.env.FLUID_SERVER_PORT
-});
-
 const onServerStarted = (config: IConfigurationData) => {
-    const ipsByInterface = getIpByInterface();
-    console.log(`indrajala-fluid-server (nodejs) listening @ http://host:${config.port} where host E ${JSON.stringify(ipsByInterface)}`);
+    
+    console.log(`indrajala-fluid-server (nodejs) listening @ http://host:${config.port} where host E`)
+    
+    const ipsByInterface = getIpsForInterfaces();
+    for (var [interfaceName, hosts] of ipsByInterface) {
+        console.log(`interface: ${interfaceName} -> host(s): ${hosts.join(', ')}`);
+    }
 };
 
 let app: Express = null;

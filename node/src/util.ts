@@ -1,20 +1,20 @@
 import { networkInterfaces } from 'os';
 
-export const getIpByInterface = () => {
+export const getIpsForInterfaces = (): Map<string,Array<string>> => {
 
     const nets = networkInterfaces();
 
-    const ipByInterface = {};
+    const ipByInterface = new Map<string,Array<string>>();
 
     for (const name of Object.keys(nets)) {
         for (const net of nets[name]) {
 
             if (net.family === 'IPv4' && !net.internal) {
-                if (!ipByInterface[name]) {
-                    ipByInterface[name] = [];
+                if (ipByInterface.get(name) === undefined) {
+                    ipByInterface.set(name, [])
                 }
     
-                ipByInterface[name].push(net.address);
+                ipByInterface.get(name).push(net.address);
             }
         }
     }

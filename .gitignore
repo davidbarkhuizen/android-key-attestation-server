@@ -2,3 +2,4 @@ rust/fluid-server/target/debug/***
 rust/fluid-server/target/rls/***
 
 node/node_modules
+node/dist
