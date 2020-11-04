@@ -1,37 +1,31 @@
 import { default as express } from 'express';
-import { IDevRegInitRq, IDevRegInitRsp } from '../../model/device';
-// import { describeCert } from '../../crypto/x509';
+import { processDeviceRegistration, processIntentToRegisterDevice } from '../../logic/device_registration';
+import { IDeviceRegistrationIntent, IDeviceRegistrationPermission, IDeviceRegistrationRq } from '../../model/device';
 
 export const router = express.Router();
 
 let registrationID = 0;
-let challenge: string = '';
-let keySizeBits: 2048;
 
-let keyLifeTimeMinutes = 24 * 60;
+const keySizeBits = 2048;
+const keyLifeTimeMinutes = 24 * 60;
 
-router.post('/intent', function (req, res) {
+router.post('/intent', async (req, res) => {
 
-    const rq = req.body as IDevRegInitRq;
+    const rq = req.body as IDeviceRegistrationIntent;
 
-    registrationID = registrationID + 1;
+    const minDeviceRequirements = {
+        apiLevel: 28
+    };
 
-    const challenge = '';
-    
-    res.status(200).json({
-        registrationID: registrationID.toString(),
-        keyAttestationChallenge: challenge,
-        keyLifeTimeMinutes,
-        keySizeBits,
-        keySN: registrationID
-    });
+    const permission = await processIntentToRegisterDevice(rq.deviceFingerprint, minDeviceRequirements);
+
+    res.status(200).json(permission);
 });
 
-router.post('/execute', function (req, res) {
+router.post('/execute', async (req, res) => {
 
-    const rq = req.body as IDevRegInitRq;
+    const rq = req.body as IDeviceRegistrationRq;
+    const regResult = await processDeviceRegistration(rq.registrationID, rq.hwAttestationKeyChain);
 
-    console.log(rq);
-
-    res.status(500).send('not yet implemented');
+    res.status(500).json(regResult);
 });

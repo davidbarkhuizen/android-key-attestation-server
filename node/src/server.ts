@@ -4,6 +4,7 @@ import { configure, IConfigurationData } from './config';
 
 import { router as deviceRouter } from './controller/device/device';
 import { router as rootRouter } from './controller/root';
+import { logRequest, logResponse } from './middleware/logging';
 import { getIpsForInterfaces } from './util';
 
 // DEBUG
@@ -28,8 +29,12 @@ const launchHttpServer = (config: IConfigurationData) => {
 
     app.use(express.json());
 
+    app.use(logRequest);
+
     app.use('/device', deviceRouter);
     app.get('/', rootRouter);
+
+    app.use(logResponse);
 
     app.listen(config.port, () => onServerStarted(config));
 };

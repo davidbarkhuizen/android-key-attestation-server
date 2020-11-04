@@ -1,20 +1,31 @@
 import { Integer } from "asn1js"
 
-export interface IDevRegInitRq {}
+export interface IDeviceFingerprint {
+    apiLevel: Number,
+    androidID: String
+}
 
-export interface IDevRegInitRsp {
+export interface IDeviceRegistrationIntent {
+    deviceFingerprint: IDeviceFingerprint
+}
+
+export interface IDeviceRegistrationPermission {
     registrationID: string,
     keyAttestationChallenge: string
-    keyLifeTimeMinutes: Integer,
-    keySizeBits: Integer,
-    keySN: Integer
+    keyLifeTimeMinutes: Number,
+    keySizeBits: Number,
+    keySN: Number
 }
 
-export interface IDevRegCompletionRq {
+export interface IDeviceRegistrationRq {
     registrationID: string,
-    attKeyChainDER: Array<string>
+    hwAttestationKeyChain: Array<string>
 }
 
-export interface IDevRegCompletionRsp {
-    succeeded: Boolean
+export interface IDevRegistrationRsp {
+    registered: Boolean
+}
+
+export interface IMinimumDeviceRequirements {
+    apiLevel: Number
 }

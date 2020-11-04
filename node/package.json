@@ -29,6 +29,7 @@
   "dependencies": {
     "asn1js": "^2.0.26",
     "crossenv": "0.0.2-security",
+    "crypto": "^1.0.1",
     "express": "^4.17.1",
     "node-forge": "^0.10.0",
     "pkijs": "^2.1.90"
