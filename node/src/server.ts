@@ -2,7 +2,7 @@ import { default as express } from 'express';
 import { Express } from 'express-serve-static-core';
 import { configure, IConfigurationData } from './config';
 
-import { router as deviceRouter } from './controller/device';
+import { router as deviceRouter } from './controller/device/device';
 import { router as rootRouter } from './controller/root';
 import { getIpsForInterfaces } from './util';
 
