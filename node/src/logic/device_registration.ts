@@ -2,9 +2,11 @@ import { promisify } from 'util';
 
 import { IDeviceFingerprint, IDeviceRegistrationIntent, IDeviceRegistrationPermission, IMinimumDeviceRequirements } from "../model/device";
 import { randomBytes } from 'crypto';
+import { attestHardwareKey } from './attestation';
 const randomBytesAsync = promisify(randomBytes);
 
 let registrationID = 0; 
+let hwAttestationChallenge = null;
 
 export const processIntentToRegisterDevice = async (
     deviceFingerprint: IDeviceFingerprint,
@@ -22,7 +24,7 @@ export const processIntentToRegisterDevice = async (
 
     // create random challenge for hw key attestation
     //
-    const hwAttestationChallenge = await randomBytesAsync(8);
+    hwAttestationChallenge = await randomBytesAsync(8);
   
     // persist request with nonces, returning reg ID (not DB id)
 
@@ -39,6 +41,8 @@ export const processDeviceRegistration = async (
     registrationID: string,
     hwAttestationKeyChain: Array<string>
 ) => {
+
+    const attested = await attestHardwareKey(hwAttestationChallenge, hwAttestationKeyChain);
 
     return {
         registered: false
