@@ -12,29 +12,21 @@ interface IX509Cert {
       },
     issuerDN: string,
     subjectDN: string,
+    CA: boolean,
+    keyUsage: {
+        digitalSignature: boolean,
+        nonRepudiation: boolean,
+        keyEncipherment: boolean,
+        dataEncipherment: boolean,
+        keyAgreement: boolean,
+        keyCertSign: boolean,
+        cRLSign: boolean,
+        encipherOnly: boolean,
+        decipherOnly: boolean
+    }
 
     /*
      extensions: [
-    {
-      id: '2.5.29.14',
-      critical: false,
-      value: '\x04\x146aá\x00|\x88\x05\tQ\x8BDlGÿ\x1ALÉêO\x12',
-      name: 'subjectKeyIdentifier',
-      subjectKeyIdentifier: '3661e1007c880509518b446c47ff1a4cc9ea4f12'
-    },
-    {
-      id: '2.5.29.35',
-      critical: false,
-      value: '0\x16\x80\x146aá\x00|\x88\x05\tQ\x8BDlGÿ\x1ALÉêO\x12',
-      name: 'authorityKeyIdentifier'
-    },
-    {
-      id: '2.5.29.19',
-      critical: true,
-      value: '0\x03\x01\x01ÿ',
-      name: 'basicConstraints',
-      cA: true
-    },
     {
       id: '2.5.29.15',
       critical: true,
@@ -62,23 +54,38 @@ interface IX509Cert {
 
 export const IX509CertFromPKICert = (cert: pki.Certificate): IX509Cert => {
 
-    console.log(typeof cert.signature)
+    const basicConstraintsExt = cert.extensions.filter(it => it.name == 'basicConstraints')
+    const ca = basicConstraintsExt.length > 0 && basicConstraintsExt[0].cA == true
+
+    const keyUsageExt = cert.extensions.filter(it => it.name == 'keyUsage')[0]
 
     return {
         version: cert.version,
         serialNumber: cert.serialNumber,
-        signature: Buffer.from(cert.signature).toString('hex'),
+        signature: Buffer.from(cert.signature).toString('hex').substring(0, 20) + '...',
         validity: {
             notBefore: cert.validity.notBefore,
             notAfter: cert.validity.notAfter
         },
         issuerDN: cert.issuer.attributes
-            .map(attr => [attr.shortName, attr.value].join('='))
+            .map(attr => [attr.shortName, attr.value].filter(it => it != null).join('='))
             .join(', '),
         subjectDN: cert.subject.attributes
-            .map(attr => [attr.shortName, attr.value].join('='))
+            .map(attr => [attr.shortName, attr.value].filter(it => it != null).join('='))
             .join(', '),
-        sigAlgoOID: cert.siginfo.algorithmOid
+        sigAlgoOID: cert.siginfo.algorithmOid,
+        CA: ca,
+        keyUsage: {
+            digitalSignature: keyUsageExt.digitalSignature,
+            nonRepudiation: keyUsageExt.nonRepudiation,
+            keyEncipherment: keyUsageExt.keyEncipherment,
+            dataEncipherment: keyUsageExt.dataEncipherment,
+            keyAgreement: keyUsageExt.keyAgreement,
+            keyCertSign: keyUsageExt.keyCertSign,
+            cRLSign: keyUsageExt.cRLSign,
+            encipherOnly: keyUsageExt.encipherOnly,
+            decipherOnly: keyUsageExt.decipherOnly,
+        }
     }
 }
 
