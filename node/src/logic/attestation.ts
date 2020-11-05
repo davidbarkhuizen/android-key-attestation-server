@@ -92,7 +92,8 @@ export const IX509CertFromPKICert = (cert: pki.Certificate): IX509Cert => {
 
 export const attestHardwareKey = async (
     challenge: String,
-    certChainDER: Array<string>
+    certChainDER: Array<string>,
+    validGoogleRootCertsDER: Array<string>,
 ) => {
 
     console.log('HW key attestation');
@@ -112,7 +113,7 @@ export const attestHardwareKey = async (
     const rootCert = certChain.find(it => it.ix509.issuerDN == it.ix509.subjectDN);
     console.log(`root cert: ${rootCert.ix509.subjectDN}`);
 
-    // verify signature
+    // verify self-signature of root cert
     //
     let rootSigVerified = false;
     try {
@@ -121,15 +122,27 @@ export const attestHardwareKey = async (
     } catch (e) {
         console.log(`error during verification of self-signature of ${rootCert.ix509.subjectDN}: ${e}`)
     }
-    console.log(`self-signature of ${rootCert.ix509.subjectDN} root verified ${rootSigVerified}`)
+    console.log(`${rootSigVerified ? 'verified' : 'failed to verify'} self-signature of ${rootCert.ix509.subjectDN} root cert`)
+    
+    if (!rootSigVerified) {
+        return false;
+    }
 
-    // TODO check against stored list of acceptable google certs
+    // confirm root cert as known
+    //
+    const isKnownValidRootCert = validGoogleRootCertsDER.includes(rootCert.der);
+    if (isKnownValidRootCert) {
+        console.log('known valid Google root HW attestation cert')
+    } else {
+        console.log('unknown root cert');
+        return false;
+    }
 
     const sorted = [rootCert];
     let remainder = certChain.filter(it => it != rootCert);
 
-    // TODO verify self-signature
-
+    // sort chain, verifying signatures
+    //
     while (sorted.length < certChain.length) {
         const parent = sorted[sorted.length - 1];
         const child = remainder.find(it => it.ix509.issuerDN == parent.ix509.subjectDN);
@@ -149,8 +162,35 @@ export const attestHardwareKey = async (
             console.log(`error during verification of signature of cert ${child.ix509.subjectDN}: ${e}`)
         }
 
-        console.log(`signature of ${child.ix509.subjectDN} by ${parent.ix509.subjectDN}: verified ${sigVerified}`)
+        console.log(`${sigVerified ? 'verified' : 'failed to verify'} ${child.ix509.subjectDN} signed by ${parent.ix509.subjectDN}`)
     }
+
+    // check temporal validity of certs
+    //
+    const now = new Date();
+    console.log(`checking temporal validity, now = ${now}`);
+    for(const cert of sorted) {
+
+        let invalidBecauseOfDate = false;
+
+        const notBefore = cert.pki.validity.notBefore;
+        if (notBefore > now) {
+            invalidBecauseOfDate = true;
+            console.log(`notBefore ${notBefore} is not satisfied`)            
+        }
+
+        const notAfter = cert.pki.validity.notAfter;
+        if (notAfter < now) {
+            invalidBecauseOfDate = true;
+            console.log(`notAfter ${notAfter} is not satisfied`)            
+        }
+
+        if (invalidBecauseOfDate) {
+            console.log(`cert ${cert.ix509.subjectDN} is either expired or not yet valid`)
+            return false;
+        }
+    }
+    console.log('all certs in chain are valid ito time');
 
     console.log('HW key attestation cert chain:');
     sorted.forEach((it, index) => {
