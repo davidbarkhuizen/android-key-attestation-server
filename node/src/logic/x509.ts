@@ -1,4 +1,5 @@
 import * as forge from 'node-forge';
+import * as asn1js from 'asn1js';
 import { KeyDescription } from '../examples/asn1js_test';
 
 // OID: X509 Extension
@@ -67,23 +68,9 @@ export interface IX509Cert {
 
 export const describeCert = (label: string, hex: string) => {
 
-    var certAsn1 = forge.asn1.fromDer(Buffer.from(hex, 'hex').toString('binary'));
-    var cert = forge.pki.certificateFromAsn1(certAsn1);
-
-    const issuerCN = cert.issuer.getField('CN')?.value ?? 'no issuer';
+    // var certAsn1 = forAsn1
+    // console.log(description.join('\n'));
     
-    const subjectCN = cert.subject.getField('CN')?.value ?? 'no subject';
-
-    console.log(`CERT: ${label}`);
-
-    const description = [
-        `issuer ${issuerCN}`, 
-        `subject ${subjectCN}`, 
-        `SN ${cert.serialNumber}`, 
-        `valid: ${cert.validity.notBefore} - ${cert.validity.notAfter}`
-    ];
-    
-    console.log(description.join('\n'));
 }
 
 export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => {
@@ -115,8 +102,15 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
 
         // console.log(asn1Seq);
 
-        const kd = KeyDescription.decode(Buffer.from(asn1SeqHex, 'hex'), 'der');
+        const kd = KeyDescription.decode(
+            Buffer.from(asn1SeqHex, 'hex'), 
+            'der',
+            { partial: true }
+        );
         console.log(kd);
+
+        // const z = asn1js.fromBER(Buffer.from(asn1SeqHex, 'hex').buffer);
+        // console.log(z);
     }
     
     return {
