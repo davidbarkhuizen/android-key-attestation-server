@@ -12,11 +12,13 @@ require('source-map-support').install();
 
 const onServerStarted = (config: IConfigurationData) => {
     
-    console.log(`indrajala-fluid-server (nodejs) listening @ http://host:${config.port} where host E`)
+    console.log(`fluid-server (C) 2020 Indrajala`);
+    console.log(`nodejs ${process.version}`);
+    console.log(`http server listening on http://host:${config.port}, where`);
     
     const ipsByInterface = getIpsForInterfaces();
     for (var [interfaceName, hosts] of ipsByInterface) {
-        console.log(`interface: ${interfaceName} -> host(s): ${hosts.join(', ')}`);
+        console.log(`for network interface ${interfaceName}, host E {${hosts.join(', ')}}`);
     }
 };
 
