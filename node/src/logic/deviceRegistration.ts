@@ -4,7 +4,7 @@ import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../model/device"
 import { randomBytes } from 'crypto';
 import { attestHardwareKey } from './attestation';
 import { IDeviceRegPermissionRsp } from '../model/rqrsp';
-import { derFromPem, pemFromDer } from './crypto';
+import { derFromPem } from './crypto';
 const randomBytesAsync = promisify(randomBytes);
 
 let registrationID = 0; 

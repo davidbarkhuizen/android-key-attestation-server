@@ -1,5 +1,5 @@
 import * as forge from 'node-forge';
-import { pki } from 'node-forge';
+import { KeyDescription } from '../examples/asn1js_test';
 
 // OID: X509 Extension
 //
@@ -24,6 +24,10 @@ import { pki } from 'node-forge';
 // "2.5.29.36": "Policy Constraints",
 // "2.5.29.37": "Extended key usage",
 // "2.5.29.54": "X.509 version 3 certificate extension Inhibit Any-policy"
+
+const OIDS = Object.freeze({
+    GoogleAttestationExtension: '1.3.6.1.4.1.11129.2.1.17'
+});
 
 const expectedExtensions = [
     'subjectKeyIdentifier',
@@ -58,7 +62,7 @@ export interface IX509Cert {
         cRLSign: boolean,
         encipherOnly: boolean,
         decipherOnly: boolean
-    }
+    }   
 }
 
 export const describeCert = (label: string, hex: string) => {
@@ -82,7 +86,7 @@ export const describeCert = (label: string, hex: string) => {
     console.log(description.join('\n'));
 }
 
-export const IX509CertFromPKICert = (cert: pki.Certificate): IX509Cert => {
+export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => {
 
     // basic constraints
     //
@@ -96,10 +100,25 @@ export const IX509CertFromPKICert = (cert: pki.Certificate): IX509Cert => {
     // name constraints
     //
     const nameConstraintsExt = cert.extensions.find(it => it.name == 'nameConstraints');
-    if (nameConstraintsExt) {
-        console.log(nameConstraintsExt);
-    }
 
+    // google key attestation
+    //
+    const attestationExt = cert.extensions.find(it => it.id == OIDS.GoogleAttestationExtension);
+    if (attestationExt) {
+
+        const asn1SeqHex = Buffer.from(attestationExt.value, 'ascii').toString('hex');
+        console.log('asn1SeqHex', asn1SeqHex);
+
+        // const asn1Seq = forge.asn1.fromDer(
+        //     Buffer.from(asn1SeqHex, 'hex').toString('binary')
+        // );
+
+        // console.log(asn1Seq);
+
+        const kd = KeyDescription.decode(Buffer.from(asn1SeqHex, 'hex'), 'der');
+        console.log(kd);
+    }
+    
     return {
         version: cert.version,
         serialNumber: cert.serialNumber,

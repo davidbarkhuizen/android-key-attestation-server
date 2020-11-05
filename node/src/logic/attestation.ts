@@ -108,8 +108,12 @@ export const attestHardwareKey = async (
     console.log('HW key attestation cert chain:');
     sorted.forEach((it, index) => {
         console.log(`${index}: ${it.ix509.subjectDN}`);
-        console.log(it.ix509);
+        // console.log(it.ix509);
     })
+
+    const hwCert = sorted[sorted.length - 1];
+
+    // console.log(hwCert.pki);
 
     return null;
 };
