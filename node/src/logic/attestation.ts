@@ -147,7 +147,8 @@ export const attestHardwareKey = async (
         const parent = sorted[sorted.length - 1];
         const child = remainder.find(it => it.ix509.issuerDN == parent.ix509.subjectDN);
         if (child === undefined) {
-            throw `break in chain: non-leaf cert ${parent.ix509.subjectDN} has no child`
+            console.log(`break in chain: ${parent.ix509.subjectDN} has no child, yet ${remainder.length} unprocessed certs remain`);
+            return false;
         }
         sorted.push(child);
         remainder = remainder.filter(it => it != child);
@@ -160,6 +161,7 @@ export const attestHardwareKey = async (
             sigVerified = pki.verifyCertificateChain(caStore, [ child.pki ]);
         } catch (e) {
             console.log(`error during verification of signature of cert ${child.ix509.subjectDN}: ${e}`)
+            return false;
         }
 
         console.log(`${sigVerified ? 'verified' : 'failed to verify'} ${child.ix509.subjectDN} signed by ${parent.ix509.subjectDN}`)
@@ -176,17 +178,17 @@ export const attestHardwareKey = async (
         const notBefore = cert.pki.validity.notBefore;
         if (notBefore > now) {
             invalidBecauseOfDate = true;
-            console.log(`notBefore ${notBefore} is not satisfied`)            
+            console.log(`cert is not yet valid (notBefore: ${notBefore})`);      
         }
 
         const notAfter = cert.pki.validity.notAfter;
         if (notAfter < now) {
             invalidBecauseOfDate = true;
-            console.log(`notAfter ${notAfter} is not satisfied`)            
+            console.log(`cert has expired (notAfter: ${notAfter})`);
         }
 
         if (invalidBecauseOfDate) {
-            console.log(`cert ${cert.ix509.subjectDN} is either expired or not yet valid`)
+            console.log(`cert ${cert.ix509.subjectDN} is not yet valid`)
             return false;
         }
     }

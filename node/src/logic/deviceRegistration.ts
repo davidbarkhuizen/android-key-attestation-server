@@ -10,7 +10,7 @@ const randomBytesAsync = promisify(randomBytes);
 let registrationID = 0; 
 let hwAttestationChallenge = null;
 const keySizeBits = 2048;
-const keyLifeTimeMinutes = 24 * 60;
+const keyLifeTimeMinutes = 0;//24 * 60;
 
 const googleRootCertsPEM = [
     `-----BEGIN CERTIFICATE-----
@@ -100,8 +100,8 @@ export const requestPermissionToRegisterDevice = async (
     return {
         registrationID: registrationID.toString(),
         keyAttestationChallenge: hwAttestationChallenge.toString('hex'),
-        keyLifeTimeMinutes: 60*24,
-        keySizeBits: 2048,
+        keyLifeTimeMinutes,
+        keySizeBits,
         keySN: 1
     }
 };
