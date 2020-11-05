@@ -1,17 +1,20 @@
 import { promisify } from 'util';
 
-import { IDeviceFingerprint, IDeviceRegistrationIntent, IDeviceRegistrationPermission, IMinimumDeviceRequirements } from "../model/device";
+import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../model/device";
 import { randomBytes } from 'crypto';
 import { attestHardwareKey } from './attestation';
+import { IDeviceRegPermissionRsp } from '../model/rqrsp';
 const randomBytesAsync = promisify(randomBytes);
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;
+const keySizeBits = 2048;
+const keyLifeTimeMinutes = 24 * 60;
 
-export const processIntentToRegisterDevice = async (
-    deviceFingerprint: IDeviceFingerprint,
-    minDeviceReqs: IMinimumDeviceRequirements
-): Promise<IDeviceRegistrationPermission> => {
+export const requestPermissionToRegisterDevice = async (
+    minDeviceReqs: IMinimumDeviceRequirements,
+    deviceFingerprint: IDeviceFingerprint
+): Promise<IDeviceRegPermissionRsp> => {
 
     // check min requirements (e.g. OS level) based on fingerprint
     //
@@ -37,12 +40,16 @@ export const processIntentToRegisterDevice = async (
     }
 };
 
-export const processDeviceRegistration = async (
+export const registerDevice = async (
+    minDeviceReqs: IMinimumDeviceRequirements,
     registrationID: string,
     hwAttestationKeyChain: Array<string>
 ) => {
 
-    const attested = await attestHardwareKey(hwAttestationChallenge, hwAttestationKeyChain);
+    const keyAttestation = await attestHardwareKey(
+        hwAttestationChallenge, 
+        hwAttestationKeyChain
+    );
 
     return {
         registered: false

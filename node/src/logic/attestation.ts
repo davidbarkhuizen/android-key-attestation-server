@@ -1,4 +1,5 @@
 import { pki, asn1 } from 'node-forge';
+import { pemFromDer } from './crypto';
 
 interface IX509Cert {
     version: Number,
@@ -94,11 +95,67 @@ export const attestHardwareKey = async (
     certChainDER: Array<string>
 ) => {
 
-    const certChainPKI = certChainDER.map(it => pki
-        .certificateFromAsn1(asn1.fromDer(Buffer.from(it, 'hex').toString('binary')))
-    );
+    console.log('HW key attestation');
 
-    for(const z of certChainPKI) {
-        console.log(IX509CertFromPKICert(z));
+    const certChain = certChainDER
+        .map(der => ({
+            der,
+            pki: pki.certificateFromAsn1(asn1.fromDer(Buffer.from(der, 'hex').toString('binary'))),
+            pem: pemFromDer(der)
+        }))
+        .map(it => ({ ...it,
+            ix509: IX509CertFromPKICert(it.pki)
+        }));
+
+    console.log(`${certChainDER.length} certs in chain`);
+
+    const rootCert = certChain.find(it => it.ix509.issuerDN == it.ix509.subjectDN);
+    console.log(`root cert: ${rootCert.ix509.subjectDN}`);
+
+    // verify signature
+    //
+    let rootSigVerified = false;
+    try {
+        const caStore = pki.createCaStore([ rootCert.pem ]);
+        rootSigVerified = pki.verifyCertificateChain(caStore, [ rootCert.pki ]);
+    } catch (e) {
+        console.log(`error during verification of self-signature of ${rootCert.ix509.subjectDN}: ${e}`)
     }
+    console.log(`self-signature of ${rootCert.ix509.subjectDN} root verified ${rootSigVerified}`)
+
+    // TODO check against stored list of acceptable google certs
+
+    const sorted = [rootCert];
+    let remainder = certChain.filter(it => it != rootCert);
+
+    // TODO verify self-signature
+
+    while (sorted.length < certChain.length) {
+        const parent = sorted[sorted.length - 1];
+        const child = remainder.find(it => it.ix509.issuerDN == parent.ix509.subjectDN);
+        if (child === undefined) {
+            throw `break in chain: non-leaf cert ${parent.ix509.subjectDN} has no child`
+        }
+        sorted.push(child);
+        remainder = remainder.filter(it => it != child);
+
+        // verify signature
+        //
+        let sigVerified = false;
+        try {
+            const caStore = pki.createCaStore([ parent.pem ]);
+            sigVerified = pki.verifyCertificateChain(caStore, [ child.pki ]);
+        } catch (e) {
+            console.log(`error during verification of signature of cert ${child.ix509.subjectDN}: ${e}`)
+        }
+
+        console.log(`signature of ${child.ix509.subjectDN} by ${parent.ix509.subjectDN}: verified ${sigVerified}`)
+    }
+
+    console.log('HW key attestation cert chain:');
+    sorted.forEach((it, index) => {
+        console.log(`${index}: ${it.ix509.subjectDN}`);
+    })
+
+    return null;
 };

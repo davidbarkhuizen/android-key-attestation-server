@@ -2,7 +2,6 @@ import { default as express } from 'express';
 import { Express } from 'express-serve-static-core';
 import { configure, IConfigurationData } from './config';
 
-import { router as deviceRouter } from './controller/device/device';
 import { router as rootRouter } from './controller/root';
 import { logRequest, logResponse } from './middleware/logging';
 import { getIpsForInterfaces } from './util';
@@ -29,11 +28,12 @@ const launchHttpServer = (config: IConfigurationData) => {
 
     app.use(express.json());
 
+    // TODO this isn't working properly
     app.use(logRequest);
 
-    app.use('/device', deviceRouter);
-    app.get('/', rootRouter);
+    app.use(rootRouter);
 
+    // TODO this isn't working properly
     app.use(logResponse);
 
     app.listen(config.port, () => onServerStarted(config));

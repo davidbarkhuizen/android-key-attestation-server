@@ -20,3 +20,8 @@ export const describeCert = (label: string, hex: string) => {
     
     console.log(description.join('\n'));
 }
+
+export const pemFromDer = (hex: string) =>
+    '-----BEGIN CERTIFICATE-----\n' 
+    + (Buffer.from(hex, 'hex')).toString('base64').match(/.{0,64}/g).join('\n')
+    + '-----END CERTIFICATE-----';
