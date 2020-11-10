@@ -1,30 +1,7 @@
 import * as forge from 'node-forge';
-import * as asn1js from 'asn1js';
-import { KeyDescription } from '../examples/asn1js_test';
 
-// OID: X509 Extension
-//
-// "2.5.29.1": "old Authority Key Identifier",
-// "2.5.29.2": "old Primary Key Attributes",
-// "2.5.29.3": "Certificate Policies",
-// "2.5.29.4": "Primary Key Usage Restriction",
-// "2.5.29.9": "Subject Directory Attributes",
-// "2.5.29.14": "Subject Key Identifier",
-// "2.5.29.15": "Key Usage",
-// "2.5.29.16": "Private Key Usage Period",
-// "2.5.29.17": "Subject Alternative Name",
-// "2.5.29.18": "Issuer Alternative Name",
-// "2.5.29.19": "Basic Constraints",
-// "2.5.29.28": "Issuing Distribution Point",
-// "2.5.29.29": "Certificate Issuer",
-// "2.5.29.30": "Name Constraints",
-// "2.5.29.31": "CRL Distribution Points",
-// "2.5.29.32": "Certificate Policies",
-// "2.5.29.33": "Policy Mappings",
-// "2.5.29.35": "Authority Key Identifier",
-// "2.5.29.36": "Policy Constraints",
-// "2.5.29.37": "Extended key usage",
-// "2.5.29.54": "X.509 version 3 certificate extension Inhibit Any-policy"
+import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
+import { IKeyDescriptionFromAsn1Node } from '../model/attestation/v3';
 
 const OIDS = Object.freeze({
     GoogleAttestationExtension: '1.3.6.1.4.1.11129.2.1.17'
@@ -93,24 +70,23 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
     const attestationExt = cert.extensions.find(it => it.id == OIDS.GoogleAttestationExtension);
     if (attestationExt) {
 
-        const asn1SeqHex = Buffer.from(attestationExt.value, 'ascii').toString('hex');
-        console.log('asn1SeqHex', asn1SeqHex);
+        const asn1Seq = Buffer.from(attestationExt.value, 'ascii');
+        console.log('asn1SeqHex', asn1Seq.toString('hex'));
 
-        // const asn1Seq = forge.asn1.fromDer(
-        //     Buffer.from(asn1SeqHex, 'hex').toString('binary')
-        // );
+        const parsed = parseDER(asn1Seq)[0];
 
-        // console.log(asn1Seq);
+        const attAppIdNode = parsed.get('6.1.0');
+        //console.log(attAppIdNode.toString(authorizationListLookup));
+        attAppIdNode.reparse();
 
-        const kd = KeyDescription.decode(
-            Buffer.from(asn1SeqHex, 'hex'), 
-            'der',
-            { partial: true }
-        );
-        console.log(kd);
+        // DEV
+        //
+        parsed
+            .summary(4, authorizationListLookup)
+            .forEach(line => console.log(line));
 
-        // const z = asn1js.fromBER(Buffer.from(asn1SeqHex, 'hex').buffer);
-        // console.log(z);
+        const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
+        console.log(keyDescription);
     }
     
     return {
