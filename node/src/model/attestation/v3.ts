@@ -36,10 +36,40 @@ enum Algorithm {
     HMAC = 128,
 };
 
+enum Digest {
+    None = 0,
+    MD5 = 1,
+    SHA1 = 2,
+    SHA_2_224 = 3,
+    SHA_2_256 = 4,
+    SHA_2_384 = 5,
+    SHA_2_512 = 6,
+}
+
+enum Padding {
+    None = 1,
+    RSA_OAEP = 2,
+    RSA_PSS = 3,
+    RSA_PKCS1_1_5_ENCRYPT = 4,
+    RSA_PKCS1_1_5_SIGN = 5,
+    PKCS7 = 64,
+}
+
+enum ECCurve {
+    P_224 = 0,
+    P_256 = 1,
+    P_384 = 2,
+    P_521 = 3,
+};
+
 export interface IAuthorizationList {
     purpose: Array<KeyPurpose>;
     algorithm: Algorithm;
     keySize: number;
+    digest: Array<Digest>;
+    padding: Array<Padding>;
+    ecCurve: ECCurve;
+    rsaPublicExponent: number;
 }
 
 export const IAuthorizationListFromAsn1Node = (node: Asn1Node): IAuthorizationList => {
@@ -56,14 +86,13 @@ export const IAuthorizationListFromAsn1Node = (node: Asn1Node): IAuthorizationLi
         purpose: node.get('#1.0')?.getSetElementsAsIntegers(),
         algorithm: node.get('#2.0')?.getInteger(),
         keySize: node.get('#3.0')?.getInteger(),
+        digest: node.get('#5.0')?.getSetElementsAsIntegers(),
+        padding: node.get('#6.0')?.getSetElementsAsIntegers(),
+        ecCurve: node.get('#10.0')?.getInteger(),
+        rsaPublicExponent: node.get('#200.0')?.getInteger(),
     };
 }
 
-    // 
-    // digest  [5] EXPLICIT SET OF INTEGER OPTIONAL,
-    // padding  [6] EXPLICIT SET OF INTEGER OPTIONAL,
-    // ecCurve  [10] EXPLICIT INTEGER OPTIONAL,
-    // rsaPublicExponent  [200] EXPLICIT INTEGER OPTIONAL,
     // rollbackResistance  [303] EXPLICIT NULL OPTIONAL,
     // activeDateTime  [400] EXPLICIT INTEGER OPTIONAL,
     // originationExpireDateTime  [401] EXPLICIT INTEGER OPTIONAL,
