@@ -93,28 +93,36 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
         const stripped = JSON.parse(JSON.stringify(keyDescription));
 
         const describe = (o: any, indent = 0, enums: Map<string, Map<number, string>>) => {
+            
             for(const key of Object.keys(o)) {
                 const val = o[key];
-                const type = typeof val;
+                const valueType = typeof val;
                 
-                if (type == 'object') {
+                const isMapped = [...enums.keys()].includes(key); 
+
+                let mappedVal = null;
+
+                if (Array.isArray(val) && isMapped) {
+                    const mappedVals = [];
+                    for (const element of val as Array<any>) {
+                        mappedVal = enums.get(key).get(element);
+                        mappedVals.push(mappedVal);
+                    }
+                    console.log(`${' '.repeat(indent)}${key}: ${mappedVals}`);
+                }
+                else if (valueType == 'object') {
                     console.log(`${' '.repeat(indent)}${key}`);
                     describe(val, indent + 4, enums)
                 } else {
-
-                    if (Array.isArray(val)) {
-
-                    } else {
-
-                        let mappedVal = null;
-                        if ([...enums.keys()].includes(key)) {
-                            mappedVal = enums.get(key).get(val);
-                        }
-    
-                        const printVal = mappedVal ?? val;
-    
-                        console.log(`${' '.repeat(indent)}${key} ${printVal.toString()}`);
+                    
+                    if (isMapped) {
+                        mappedVal = enums.get(key).get(val);
                     }
+
+                    const printVal = mappedVal ?? val;
+
+                    console.log(`${' '.repeat(indent)}${key} ${printVal.toString()}`);
+
                 }
             }
         };
