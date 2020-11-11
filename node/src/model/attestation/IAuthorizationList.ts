@@ -1,0 +1,42 @@
+import { Algorithm, KeyPurpose, Digest, Padding, ECCurve, KeyOrigin } from "./enums";
+import { IAttestationApplicationId } from "./IAttestationApplicationId";
+import { IRootOfTrust } from "./IRootOfTrust";
+
+export interface IAuthorizationList {
+    purpose: Array<KeyPurpose>;
+    algorithm: Algorithm;
+    keySize: number;
+    digest: Array<Digest>;
+    padding: Array<Padding>;
+    ecCurve: ECCurve;
+    rsaPublicExponent: number;
+    rollbackResistance: boolean;
+    activeDateTime: number;
+    originationExpireDateTime: Date;
+    usageExpireDateTime: number;
+    noAuthRequired: boolean;
+    userAuthType: number;
+    authTimeout: number;
+    allowWhileOnBody: boolean;
+    trustedUserPresenceRequired: boolean;
+    trustedConfirmationRequired: boolean;
+    unlockedDeviceRequired: boolean;
+    allApplications: boolean;
+    applicationId: string;
+    creationDateTime: Date;
+    origin: KeyOrigin;
+    rootOfTrust: IRootOfTrust;
+    osVersion: number;
+    osPatchLevel: number;
+    attestationApplicationId: IAttestationApplicationId;
+    attestationIdBrand: string;
+    attestationIdDevice: string;
+    attestationIdProduct: string;
+    attestationIdSerial: string;
+    attestationIdImei: string;
+    attestationIdMeid: string;
+    attestationIdManufacturer: string;
+    attestationIdModel: string;
+    vendorPatchLevel: number;
+    bootPatchLevel: number;
+}

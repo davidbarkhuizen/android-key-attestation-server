@@ -1,8 +1,9 @@
 import * as forge from 'node-forge';
 
 import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
-import { IKeyDescriptionFromAsn1Node, Padding } from '../model/attestation/att_schema_v3';
-import { LocalConstructedValueBlock } from 'asn1js';
+import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from '../model/attestation/enums';
+import { enumMap } from '../util';
+import { IKeyDescriptionFromAsn1Node } from '../model/attestation/factory';
 
 const OIDS = Object.freeze({
     GoogleAttestationExtension: '1.3.6.1.4.1.11129.2.1.17'
@@ -91,31 +92,48 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
 
         const stripped = JSON.parse(JSON.stringify(keyDescription));
 
-        const describe = (o: any, indent = 0) => {
+        const describe = (o: any, indent = 0, enums: Map<string, Map<number, string>>) => {
             for(const key of Object.keys(o)) {
                 const val = o[key];
                 const type = typeof val;
                 
                 if (type == 'object') {
                     console.log(`${' '.repeat(indent)}${key}`);
-                    describe(val, indent + 4)
+                    describe(val, indent + 4, enums)
                 } else {
-                    console.log(`${' '.repeat(indent)}${key} ${val.toString()}`);
+
+                    if (Array.isArray(val)) {
+
+                    } else {
+
+                        let mappedVal = null;
+                        if ([...enums.keys()].includes(key)) {
+                            mappedVal = enums.get(key).get(val);
+                        }
+    
+                        const printVal = mappedVal ?? val;
+    
+                        console.log(`${' '.repeat(indent)}${key} ${printVal.toString()}`);
+                    }
                 }
             }
         };
 
-        describe(stripped);   
-        
-        const handle = (o: any) => {
-            for (const key of Object.keys(o)) {
-                
-                if (!isNaN(parseInt(key)))
-                    console.log(key, typeof key, o[key]);
-            }
-        };
-        
-        handle(Padding);
+        const enumMapLookup = new Map(
+            [
+                ['purpose', enumMap(KeyPurpose)],
+                ['algorithm', enumMap(Algorithm)],
+                ['digest', enumMap(Digest)],
+                ['padding', enumMap(Padding)],
+                ['ecCurve', enumMap(ECCurve)],
+                ['origin', enumMap(KeyOrigin)],
+                ['verifiedBootState', enumMap(VerifiedBootState)],
+                ['attestationSecurityLevel', enumMap(SecurityLevel)],
+                ['keymasterSecurityLevel', enumMap(SecurityLevel)],
+            ]
+        );
+
+        describe(stripped, 0, enumMapLookup);
     }
     
     return {
