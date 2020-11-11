@@ -1,7 +1,7 @@
 import * as forge from 'node-forge';
 
 import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
-import { IKeyDescriptionFromAsn1Node } from '../model/attestation/v3';
+import { IKeyDescriptionFromAsn1Node } from '../model/attestation/att_schema_v3';
 
 const OIDS = Object.freeze({
     GoogleAttestationExtension: '1.3.6.1.4.1.11129.2.1.17'
@@ -86,7 +86,7 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
             .forEach(line => console.log(line));
 
         const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
-        console.log(keyDescription);
+        console.log(JSON.stringify(keyDescription, null, 4));
     }
     
     return {
