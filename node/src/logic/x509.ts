@@ -1,7 +1,8 @@
 import * as forge from 'node-forge';
 
 import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
-import { IKeyDescriptionFromAsn1Node } from '../model/attestation/att_schema_v3';
+import { IKeyDescriptionFromAsn1Node, Padding } from '../model/attestation/att_schema_v3';
+import { LocalConstructedValueBlock } from 'asn1js';
 
 const OIDS = Object.freeze({
     GoogleAttestationExtension: '1.3.6.1.4.1.11129.2.1.17'
@@ -87,6 +88,34 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
 
         const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
         console.log(JSON.stringify(keyDescription, null, 4));
+
+        const stripped = JSON.parse(JSON.stringify(keyDescription));
+
+        const describe = (o: any, indent = 0) => {
+            for(const key of Object.keys(o)) {
+                const val = o[key];
+                const type = typeof val;
+                
+                if (type == 'object') {
+                    console.log(`${' '.repeat(indent)}${key}`);
+                    describe(val, indent + 4)
+                } else {
+                    console.log(`${' '.repeat(indent)}${key} ${val.toString()}`);
+                }
+            }
+        };
+
+        describe(stripped);   
+        
+        const handle = (o: any) => {
+            for (const key of Object.keys(o)) {
+                
+                if (!isNaN(parseInt(key)))
+                    console.log(key, typeof key, o[key]);
+            }
+        };
+        
+        handle(Padding);
     }
     
     return {

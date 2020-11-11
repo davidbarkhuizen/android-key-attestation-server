@@ -1,12 +1,12 @@
 import { Asn1Node } from "@indrajala/asn1der"
 
-enum SecurityLevel {
+export enum SecurityLevel {
     Software = 0,
     TrustedEnvironment = 1,
     StrongBox = 2,
 }
 
-enum KeyPurpose {
+export enum KeyPurpose {
     Encrypt = 0,
     Decrypt = 1,
     Sign = 2,
@@ -15,14 +15,14 @@ enum KeyPurpose {
     Wrapkey = 5,
 };
 
-enum Algorithm {
+export enum Algorithm {
     RSA = 1,
     EC = 3,
     AES = 32,
     HMAC = 128,
 };
 
-enum Digest {
+export enum Digest {
     None = 0,
     MD5 = 1,
     SHA1 = 2,
@@ -32,7 +32,7 @@ enum Digest {
     SHA_2_512 = 6,
 }
 
-enum Padding {
+export enum Padding {
     None = 1,
     RSA_OAEP = 2,
     RSA_PSS = 3,
@@ -41,14 +41,14 @@ enum Padding {
     PKCS7 = 64,
 }
 
-enum ECCurve {
+export enum ECCurve {
     P_224 = 0,
     P_256 = 1,
     P_384 = 2,
     P_521 = 3,
 };
 
-enum VerifiedBootState {
+export enum VerifiedBootState {
     Verified = 0,
     SelfSigned = 1,
     Unverified = 2,
@@ -75,32 +75,12 @@ export interface IAttestationApplicationId {
     signatureDigests: Array<string>;
 }
 
-// OCTET STRING - 3042311c301a04157a61...
-//     SEQUENCE(OF) - 311c301a04157a612e63...
-//         SET(OF) - 301a04157a612e636f2e...
-//             SEQUENCE(OF) - 04157a612e636f2e696e...
-//                 OCTET STRING - 7a612e636f2e696e6472...
-//                 INTEGER - 1
-//         SET(OF) - 04207b6d3688d13ef0b6...
-//             OCTET STRING - 7b6d3688d13ef0b62146...
-
-
-
 export const IAttestationApplicationIdFromAsn1Node = (node: Asn1Node): IAttestationApplicationId => {
-    
-    if (node) {
-        console.log('---------------------');
-        node.summary(4, null).map(line => console.log(line));
-        console.log('---------------------');
-        node.get('0.0').summary(4, null).map(line => console.log(line));
-        console.log('---------------------');
-        node.get('0.0')?.getSetElements().map(it => console.log(it.toString()));
-    }
-    
+
     return (node)
     ? {
         packageInfos: node.get('0.0')?.getSetElements().map(it => IAttestationPackageInfoFromAsn1Node(it)),
-        signatureDigests: node.get('1')?.getSetElements().map(it => it.getContentAsHex())
+        signatureDigests: node.get('0.1')?.getSetElements().map(it => it.getContentAsHex())
     }
     : undefined
 };
@@ -133,7 +113,7 @@ export interface IAuthorizationList {
     rsaPublicExponent: number;
     rollbackResistance: boolean;
     activeDateTime: number;
-    originationExpireDateTime: number;
+    originationExpireDateTime: Date;
     usageExpireDateTime: number;
     noAuthRequired: boolean;
     userAuthType: number;
@@ -144,7 +124,7 @@ export interface IAuthorizationList {
     unlockedDeviceRequired: boolean;
     allApplications: boolean;
     applicationId: string;
-    creationDateTime: number;
+    creationDateTime: Date;
     origin: number;
     rootOfTrust: any;
     osVersion: number;
@@ -162,6 +142,14 @@ export interface IAuthorizationList {
     bootPatchLevel: number;
 }
 
+export const safeDateFromMS = (ms: number | null): Date | null => {
+    if (!ms) {
+        return undefined;
+    }
+
+    return new Date(ms);
+}
+
 export const IAuthorizationListFromAsn1Node = (node: Asn1Node): IAuthorizationList => {
  
     return {
@@ -174,7 +162,7 @@ export const IAuthorizationListFromAsn1Node = (node: Asn1Node): IAuthorizationLi
         rsaPublicExponent: node.get('#200.0')?.getInteger(),
         rollbackResistance: node.get('#303.0')?.getNull() == true,
         activeDateTime: node.get('#400.0')?.getInteger(),
-        originationExpireDateTime: node.get('#401.0')?.getInteger(),
+        originationExpireDateTime: safeDateFromMS(node.get('#401.0')?.getInteger()),
         usageExpireDateTime: node.get('#402.0')?.getInteger(),
         noAuthRequired: node.get('#503.0')?.getNull() == true,
         userAuthType: node.get('#504.0')?.getInteger(),
@@ -185,7 +173,7 @@ export const IAuthorizationListFromAsn1Node = (node: Asn1Node): IAuthorizationLi
         unlockedDeviceRequired: node.get('#509.0')?.getNull() == true,
         allApplications: node.get('#600.0')?.getNull() == true,
         applicationId: node.get('#601.0')?.getContentAsHex(),
-        creationDateTime: node.get('#701.0')?.getInteger(),
+        creationDateTime: safeDateFromMS(node.get('#701.0')?.getInteger()),
         origin: node.get('#702.0')?.getInteger(),
         rootOfTrust: IRootOfTrustFromAsn1Node(node.get('#704.0')),
         osVersion: node.get('#705.0')?.getInteger(),
