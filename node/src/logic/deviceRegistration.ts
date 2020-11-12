@@ -10,7 +10,7 @@ const randomBytesAsync = promisify(randomBytes);
 let registrationID = 0; 
 let hwAttestationChallenge = null;
 const keySizeBits = 2048;
-const keyLifeTimeMinutes = 0;//24 * 60;
+const keyLifeTimeMinutes = 24 * 60;
 
 const googleRootCertsPEM = [
     `-----BEGIN CERTIFICATE-----

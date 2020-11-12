@@ -91,6 +91,7 @@ export const attestHardwareKey = async (
             const caStore = pki.createCaStore([ parent.pem ]);
             sigVerified = pki.verifyCertificateChain(caStore, [ child.pki ]);
         } catch (e) {
+            console.error(e);
             const error = `error during verification of signature of cert ${child.ix509.subjectDN} by ${parent.ix509.subjectDN}: ${e}`;
             console.log(error);
             return error;
