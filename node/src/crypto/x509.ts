@@ -1,4 +1,22 @@
+import { fromBER } from 'asn1js';
 import * as forge from 'node-forge';
+import { IX509Cert } from './IX509Cert';
+
+
+export const pemFromDer = (hex: string) =>
+    '-----BEGIN CERTIFICATE-----\n' 
+    + (Buffer.from(hex, 'hex')).toString('base64').match(/.{0,64}/g).join('\n')
+    + '-----END CERTIFICATE-----';
+
+export const derFromPem = (pem: string) => {
+
+    const b64 = pem
+        .replace('-----BEGIN CERTIFICATE-----', '')
+        .replace('-----END CERTIFICATE-----', '')
+        .replace('\n', '');
+
+    return Buffer.from(b64, 'base64').toString('hex');
+}
 
 const expectedExtensions = [
     'subjectKeyIdentifier',
@@ -7,41 +25,6 @@ const expectedExtensions = [
     'keyUsage',
     'cRLDistributionPoints'
 ];
-
-export interface IX509Cert {
-
-    version: Number,
-    serialNumber: string,
-    signature: string,
-    // siginfo: { algorithmOid: '1.2.840.113549.1.1.11', parameters: {} },
-    sigAlgoOID: string
-    validity: {
-        notBefore: Date,
-        notAfter: Date
-      },
-    issuerDN: string,
-    subjectDN: string,
-    extensions: Array<string>,
-    isCA: boolean,
-    keyUsage: {
-        digitalSignature: boolean,
-        nonRepudiation: boolean,
-        keyEncipherment: boolean,
-        dataEncipherment: boolean,
-        keyAgreement: boolean,
-        keyCertSign: boolean,
-        cRLSign: boolean,
-        encipherOnly: boolean,
-        decipherOnly: boolean
-    }   
-}
-
-export const describeCert = (label: string, hex: string) => {
-
-    // var certAsn1 = forAsn1
-    // console.log(description.join('\n'));
-    
-}
 
 export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => {
 
@@ -57,6 +40,7 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
     // name constraints
     //
     const nameConstraintsExt = cert.extensions.find(it => it.name == 'nameConstraints');
+    // TODO nameConstraintsExt
     
     return {
         version: cert.version,

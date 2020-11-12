@@ -1,6 +1,6 @@
 import { expect } from 'chai';
+import { fetchGoogleAttestationCRL } from '../../src/hw_attestation/attestation';
 
-import { fetchGoogleAttestationCRL } from "../../src/logic/attestation";
 
 describe('fetchGoogleAttestationCRL', 
   async () => { 

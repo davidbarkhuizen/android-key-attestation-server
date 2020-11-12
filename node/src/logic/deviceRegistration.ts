@@ -5,9 +5,9 @@ import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../model/device"
 import { randomBytes } from 'crypto';
 const randomBytesAsync = promisify(randomBytes);
 
-import { attestHardwareKey } from './attestation';
 import { IDeviceRegPermissionRsp } from '../model/rqrsp';
-import { derFromPem } from './crypto';
+import { attestHardwareKey } from '../hw_attestation/attestation';
+import { derFromPem } from '../crypto/x509';
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;

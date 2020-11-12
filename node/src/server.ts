@@ -4,7 +4,7 @@ import { configure, IConfigurationData } from './config';
 
 import { router as rootRouter } from './controller/root';
 import { logRequest, logResponse } from './middleware/logging';
-import { getIpsForInterfaces } from './util';
+import { getIpsForInterfaces } from './general/util';
 
 // DEBUG
 //

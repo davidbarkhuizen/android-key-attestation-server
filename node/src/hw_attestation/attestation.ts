@@ -1,57 +1,56 @@
 import { Validator } from 'jsonschema';
 import { pki, asn1 } from 'node-forge';
-import { pemFromDer } from './crypto';
-import { IX509CertFromPKICert } from './x509';
 
 import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
-import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from '../model/attestation/enums';
-import { enumMap } from '../util';
-import { IKeyDescriptionFromAsn1Node } from '../model/attestation/factory';
+import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from '../hw_attestation/model/enums';
+import { enumMap } from '../general/util';
+import { IKeyDescriptionFromAsn1Node } from '../hw_attestation/factory';
 
 import { default as fetch } from 'node-fetch';
+import { IX509CertFromPKICert, pemFromDer } from '../crypto/x509';
 
-// const crlSchema = {
-//     "$schema": "http://json-schema.org/draft-07/schema#",
-//     "type": "object",
-//     "properties": {
-//       "entries": {
-//         "description" : "Each entry represents the status of an attestation key. The dictionary-key is the certificate serial number in lowercase hex.",
-//         "type": "object",
-//         "propertyNames": {
-//            "pattern": "^[a-f0-9]*$"
-//         },
-//         "additionalProperties": {
-//           "type": "object",
-//           "properties": {
-//             "status": {
-//               "description": "[REQUIRED] Current status of the key.",
-//               "type": "string",
-//               "enum": ["REVOKED", "SUSPENDED"]
-//             },
-//             "expires": {
-//               "description": "[OPTIONAL] UTC date when certificate expires in ISO8601 format (YYYY-MM-DD). Can be used to clear expired certificates from the status list.",
-//               "type": "string",
-//               "format": "date"
-//             },
-//             "reason": {
-//               "description": "[OPTIONAL] Reason for the current status.",
-//               "type": "string",
-//               "enum": ["UNSPECIFIED", "KEY_COMPROMISE", "CA_COMPROMISE", "SUPERSEDED", "SOFTWARE_FLAW"]
-//             },
-//             "comment": {
-//               "description": "[OPTIONAL] Free form comment about the key status.",
-//               "type": "string",
-//               "maxLength": 140
-//             }
-//           },
-//           "required": ["status"],
-//           "additionalProperties": false
-//         }
-//       }
-//     },
-//     "required": ["entries"],
-//     "additionalProperties": false
-//   };
+const crlSchema = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "entries": {
+        "description" : "Each entry represents the status of an attestation key. The dictionary-key is the certificate serial number in lowercase hex.",
+        "type": "object",
+        "propertyNames": {
+           "pattern": "^[a-f0-9]*$"
+        },
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "[REQUIRED] Current status of the key.",
+              "type": "string",
+              "enum": ["REVOKED", "SUSPENDED"]
+            },
+            "expires": {
+              "description": "[OPTIONAL] UTC date when certificate expires in ISO8601 format (YYYY-MM-DD). Can be used to clear expired certificates from the status list.",
+              "type": "string",
+              "format": "date"
+            },
+            "reason": {
+              "description": "[OPTIONAL] Reason for the current status.",
+              "type": "string",
+              "enum": ["UNSPECIFIED", "KEY_COMPROMISE", "CA_COMPROMISE", "SUPERSEDED", "SOFTWARE_FLAW"]
+            },
+            "comment": {
+              "description": "[OPTIONAL] Free form comment about the key status.",
+              "type": "string",
+              "maxLength": 140
+            }
+          },
+          "required": ["status"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": ["entries"],
+    "additionalProperties": false
+  };
 
 export const fetchGoogleAttestationCRL = async (): Promise<Array<string>> => {
 
@@ -61,21 +60,12 @@ export const fetchGoogleAttestationCRL = async (): Promise<Array<string>> => {
     const crl = await rsp.json();
 
     var v = new Validator();
-    const validationResult = v.validate(crl, {});
+    const validationResult = v.validate(crl, crlSchema);
 
     console.log(`valid: ${validationResult.valid}`);
 
-    const match = {
-        "entries": {
-          "e1d6f38d39c8776d" : {
-            "status": "REVOKED",
-            "reason": "TEST"
-          }
-        }
-    };
-
     return Object
-        .keys(match.entries)
+        .keys(crl.entries)
         .map(it => it.toUpperCase());
 };
 
