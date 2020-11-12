@@ -2,7 +2,7 @@ import { Validator } from 'jsonschema';
 import { pki, asn1 } from 'node-forge';
 
 import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
-import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from '../hw_attestation/model/enums';
+import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from './model/google/enums';
 import { enumMap } from '../general/util';
 import { IKeyDescriptionFromAsn1Node } from '../hw_attestation/factory';
 

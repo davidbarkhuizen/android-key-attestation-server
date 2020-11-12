@@ -1,4 +1,4 @@
-import { VerifiedBootState } from "./google/enums";
+import { VerifiedBootState } from "./enums";
 
 export interface IRootOfTrust {
     verifiedBootKey: string,

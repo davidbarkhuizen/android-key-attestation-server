@@ -1,5 +1,5 @@
-import { Algorithm, KeyPurpose, Digest, Padding, ECCurve, KeyOrigin } from "./google/enums";
-import { IAttestationApplicationId } from "./google/IAttestationApplicationId";
+import { Algorithm, KeyPurpose, Digest, Padding, ECCurve, KeyOrigin } from "./enums";
+import { IAttestationApplicationId } from "./IAttestationApplicationId";
 import { IRootOfTrust } from "./IRootOfTrust";
 
 export interface IAuthorizationList {

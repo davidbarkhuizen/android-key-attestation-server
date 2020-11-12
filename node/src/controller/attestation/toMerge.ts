@@ -7,7 +7,7 @@ import { attestHardwareKey } from '../../hw_attestation/attestation';
 import { derFromPem } from '../../crypto/x509';
 import { IKeyAttInitRsp } from './rqrsp/IKeyAttInitRsp';
 import { IDeviceFingerprint } from '../../hw_attestation/model/IDeviceFingerprint';
-import { IMinimumDeviceRequirements } from '../../hw_attestation/model/IMinimumDeviceRequirements';
+import { IMinimumDeviceRequirements } from '../../hw_attestation/model/google/IMinimumDeviceRequirements';
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;

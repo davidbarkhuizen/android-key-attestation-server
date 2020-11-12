@@ -1,12 +1,11 @@
 import { Asn1Node } from "@indrajala/asn1der";
 import { safeDateFromMS } from "../general/util";
-import { IAttestationPackageInfo } from "./model/IAttestationPackageInfo";
-import { IAuthorizationList } from "./model/IAuthorizationList";
-
-import { Algorithm } from './model/enums';
-import { IAttestationApplicationId } from "./model/IAttestationApplicationId";
-import { IKeyDescription } from "./model/IKeyDescription";
-import { IRootOfTrust } from "./model/IRootOfTrust";
+import { Algorithm } from './model/google/enums';
+import { IAttestationApplicationId } from "./model/google/IAttestationApplicationId";
+import { IAttestationPackageInfo } from "./model/google/IAttestationPackageInfo";
+import { IAuthorizationList } from "./model/google/IAuthorizationList";
+import { IKeyDescription } from "./model/google/IKeyDescription";
+import { IRootOfTrust } from "./model/google/IRootOfTrust";
 
 export const IAttestationPackageInfoFromAsn1Node = (node: Asn1Node): IAttestationPackageInfo => {
        
