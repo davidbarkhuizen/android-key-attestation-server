@@ -1,3 +1,4 @@
+import { Validator } from 'jsonschema';
 import { pki, asn1 } from 'node-forge';
 import { pemFromDer } from './crypto';
 import { IX509CertFromPKICert } from './x509';
@@ -9,14 +10,73 @@ import { IKeyDescriptionFromAsn1Node } from '../model/attestation/factory';
 
 import { default as fetch } from 'node-fetch';
 
-export const fetchGoogleAttestationCRL = async (): Promise<any> => {
+// const crlSchema = {
+//     "$schema": "http://json-schema.org/draft-07/schema#",
+//     "type": "object",
+//     "properties": {
+//       "entries": {
+//         "description" : "Each entry represents the status of an attestation key. The dictionary-key is the certificate serial number in lowercase hex.",
+//         "type": "object",
+//         "propertyNames": {
+//            "pattern": "^[a-f0-9]*$"
+//         },
+//         "additionalProperties": {
+//           "type": "object",
+//           "properties": {
+//             "status": {
+//               "description": "[REQUIRED] Current status of the key.",
+//               "type": "string",
+//               "enum": ["REVOKED", "SUSPENDED"]
+//             },
+//             "expires": {
+//               "description": "[OPTIONAL] UTC date when certificate expires in ISO8601 format (YYYY-MM-DD). Can be used to clear expired certificates from the status list.",
+//               "type": "string",
+//               "format": "date"
+//             },
+//             "reason": {
+//               "description": "[OPTIONAL] Reason for the current status.",
+//               "type": "string",
+//               "enum": ["UNSPECIFIED", "KEY_COMPROMISE", "CA_COMPROMISE", "SUPERSEDED", "SOFTWARE_FLAW"]
+//             },
+//             "comment": {
+//               "description": "[OPTIONAL] Free form comment about the key status.",
+//               "type": "string",
+//               "maxLength": 140
+//             }
+//           },
+//           "required": ["status"],
+//           "additionalProperties": false
+//         }
+//       }
+//     },
+//     "required": ["entries"],
+//     "additionalProperties": false
+//   };
+
+export const fetchGoogleAttestationCRL = async (): Promise<Array<string>> => {
 
     const url = 'https://android.googleapis.com/attestation/status';
 
     const rsp = await fetch(url);
-    const json = await rsp.json();
+    const crl = await rsp.json();
 
-    return JSON.stringify(json);
+    var v = new Validator();
+    const validationResult = v.validate(crl, {});
+
+    console.log(`valid: ${validationResult.valid}`);
+
+    const match = {
+        "entries": {
+          "e1d6f38d39c8776d" : {
+            "status": "REVOKED",
+            "reason": "TEST"
+          }
+        }
+    };
+
+    return Object
+        .keys(match.entries)
+        .map(it => it.toUpperCase());
 };
 
 export const getAttestationExtension = (
@@ -220,6 +280,29 @@ export const attestHardwareKey = async (
     }
     console.log(`all certs are temporally valid as of ${now}`);
     
+    // check against CRL
+
+    const crl = await fetchGoogleAttestationCRL();
+    console.log('checking against official Google CRL...');
+
+    const revoked = sortedChain.filter(cert => 
+        crl.includes(cert.ix509.subjectDN.toUpperCase())
+    );
+
+    if (revoked.length > 0) {
+        
+        const revokedSubjects = revoked
+            .map(it => it.ix509.subjectDN)
+            .join(', ');
+
+        const error = `chain is invalid - it contains ${revoked.length} revoked cert(s): ${revokedSubjects}`;
+        console.log(error);
+        
+        return error;
+    }
+
+    console.log('chain contains no known revoked certs');
+
     console.log('validated cert chain:');
     sortedChain.forEach((it, index) => {
 
