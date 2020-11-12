@@ -1,7 +1,7 @@
 import { default as express } from 'express';
-import { registerDevice, initiateKeyAttestation } from '../../logic/deviceRegistration';
-import { IKeyAttRq } from '../../rqrsp/IKeyAttRq';
-import { IKeyAttInitRq } from '../../rqrsp/IKeyAttInitRq';
+import { registerDevice, initiateKeyAttestation } from '../../hw_attestation/deviceRegistration';
+import { IKeyAttInitRq } from './rqrsp/IKeyAttInitRq';
+import { IKeyAttRq } from './rqrsp/IKeyAttRq';
 
 export const keyRouter = express.Router();
 

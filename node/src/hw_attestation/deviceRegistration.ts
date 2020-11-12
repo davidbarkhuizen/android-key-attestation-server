@@ -5,9 +5,9 @@ import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../device";
 import { randomBytes } from 'crypto';
 const randomBytesAsync = promisify(randomBytes);
 
-import { attestHardwareKey } from '../hw_attestation/attestation';
+import { attestHardwareKey } from './attestation';
 import { derFromPem } from '../crypto/x509';
-import { IKeyAttInitRsp } from '../rqrsp/IKeyAttInitRsp';
+import { IKeyAttInitRsp } from '../controller/attestation/rqrsp/IKeyAttInitRsp';
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;
@@ -100,11 +100,11 @@ export const initiateKeyAttestation = async (
     // persist request with nonces, returning reg ID (not DB id)
 
     return {
-        registrationID: registrationID.toString(),
-        keyAttestationChallenge: hwAttestationChallenge.toString('hex'),
+        attestationID: registrationID.toString(),
+        challenge: hwAttestationChallenge.toString('hex'),
         keyLifeTimeMinutes,
         keySizeBits,
-        keySN: 1
+        keySerialNumber: 1
     }
 };
 

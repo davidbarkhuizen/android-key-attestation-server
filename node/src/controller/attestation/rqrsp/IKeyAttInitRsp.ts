@@ -1,7 +1,8 @@
 export interface IKeyAttInitRsp {
-    registrationID: string,
-    keyAttestationChallenge: string
+    attestationID: string,
+    challenge: string
+    
     keyLifeTimeMinutes: Number,
     keySizeBits: Number,
-    keySN: Number
+    keySerialNumber: Number
 }
