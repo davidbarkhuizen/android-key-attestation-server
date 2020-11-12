@@ -4,7 +4,7 @@ import { pki, asn1 } from 'node-forge';
 import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
 import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from './model/google/enums';
 import { enumMap } from '../general/util';
-import { IKeyDescriptionFromAsn1Node } from '../hw_attestation/factory';
+import { IKeyDescriptionFromAsn1Node } from './factory';
 
 import { default as fetch } from 'node-fetch';
 import { IX509CertFromPKICert, pemFromDer } from '../crypto/x509';
@@ -84,14 +84,8 @@ export const getAttestationExtension = (
 
         const parsed = parseDER(asn1Seq)[0];
 
-        const attAppIdNode = parsed.get('6.1.0');
+        const attAppIdNode = parsed.get('6.#709.0');
         attAppIdNode.reparse();
-
-        // DEV
-        //
-        // parsed // asn1.der
-        //     .summary(4, authorizationListLookup)
-        //     .forEach(line => console.log(line));
 
         const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
 

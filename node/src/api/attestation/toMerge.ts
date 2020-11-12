@@ -3,11 +3,11 @@ import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 const randomBytesAsync = promisify(randomBytes);
 
-import { attestHardwareKey } from '../../hw_attestation/attestation';
+import { attestHardwareKey } from '../../key_attestation/attestation';
 import { derFromPem } from '../../crypto/x509';
 import { IKeyAttInitRsp } from './rqrsp/IKeyAttInitRsp';
-import { IDeviceFingerprint } from '../../hw_attestation/model/IDeviceFingerprint';
-import { IMinimumDeviceRequirements } from '../../hw_attestation/model/google/IMinimumDeviceRequirements';
+import { IDeviceFingerprint } from '../../key_attestation/model/IDeviceFingerprint';
+import { IMinimumDeviceRequirements } from '../../key_attestation/model/google/IMinimumDeviceRequirements';
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;

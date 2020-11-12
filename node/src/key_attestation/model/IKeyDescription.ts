@@ -1,5 +1,5 @@
 import { SecurityLevel } from "./google/enums";
-import { IAuthorizationList } from "../../hw_attestation/model/IAuthorizationList";
+import { IAuthorizationList } from "./IAuthorizationList";
 
 export interface IKeyDescription {
     attestationVersion: number;
