@@ -36,7 +36,5 @@ export const enumMap = (o: any) => {
         .filter(key => !isNaN(parseInt(key)))
         .map(key => [parseInt(key), o[key].toString()]) as Array<[number, string]>;
 
-    //console.log(...source);
-
     return new Map<number, string>(source);
 }

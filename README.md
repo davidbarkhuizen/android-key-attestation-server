@@ -1,5 +1,13 @@
 # indrajala-fluid-server
 
+## TODO
+
+- refactor recent work on describing with enums
+- hw key attestation
+  - cert chain validation (key usage and basic constraints is CA)
+  - CRL checking
+  - move back to dedicated API methods, independent of device registration
+
 ## glossary
 
 token|meaning

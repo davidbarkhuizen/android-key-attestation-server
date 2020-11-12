@@ -73,22 +73,19 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
     if (attestationExt) {
 
         const asn1Seq = Buffer.from(attestationExt.value, 'ascii');
-        console.log('asn1SeqHex', asn1Seq.toString('hex'));
 
         const parsed = parseDER(asn1Seq)[0];
 
         const attAppIdNode = parsed.get('6.1.0');
-        //console.log(attAppIdNode.toString(authorizationListLookup));
         attAppIdNode.reparse();
 
         // DEV
         //
-        parsed
-            .summary(4, authorizationListLookup)
-            .forEach(line => console.log(line));
+        // parsed // asn1.der
+        //     .summary(4, authorizationListLookup)
+        //     .forEach(line => console.log(line));
 
         const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
-        console.log(JSON.stringify(keyDescription, null, 4));
 
         const stripped = JSON.parse(JSON.stringify(keyDescription));
 
@@ -141,7 +138,7 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
             ]
         );
 
-        describe(stripped, 0, enumMapLookup);
+        // describe(stripped, 0, enumMapLookup);
     }
     
     return {

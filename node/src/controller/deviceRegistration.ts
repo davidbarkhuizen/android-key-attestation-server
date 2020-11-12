@@ -29,5 +29,5 @@ router.post('/register', async (req, res) => {
         rq.hwAttestationKeyChain
     );
 
-    res.status(500).json(regResult);
+    res.status(200).json(regResult);
 });
