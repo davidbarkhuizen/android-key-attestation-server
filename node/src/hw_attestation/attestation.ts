@@ -240,7 +240,7 @@ export const attestHardwareKey = async (
             sigVerified = pki.verifyCertificateChain(caStore, [ child.pki ]);
         } catch (e) {
             console.error(e);
-            const error = `error during verification of signature of cert ${child.ix509.subjectDN} by ${parent.ix509.subjectDN}: ${e}`;
+            const error = `error during verification of signature of cert ${child.ix509.subjectDN} by ${parent.ix509.subjectDN}: ${e.toString()}`;
             console.log(error);
             return error;
         }
@@ -248,7 +248,7 @@ export const attestHardwareKey = async (
         console.log(`${sigVerified ? 'verified' : 'failed to verify'} ${childChainIndex} ${child.ix509.subjectDN} signed by ${childChainIndex - 1} ${parent.ix509.subjectDN}`)
     }
 
-    // check temporal validity of certs
+    // (double) check temporal validity of certs
     //
     const now = new Date();
     console.log(`checking temporal validity`);
@@ -256,14 +256,14 @@ export const attestHardwareKey = async (
 
         const notBefore = cert.pki.validity.notBefore;
         if (notBefore > now) {
-            const error = `cert ${cert.ix509.subjectDN} is not yet valid as of ${now} - notBefore = ${notBefore})`;
+            const error = `cert ${cert.ix509.subjectDN} is not yet valid as of ${now} (not before ${notBefore})`;
             console.log(error);      
             return error;
         }
 
         const notAfter = cert.pki.validity.notAfter;
         if (notAfter < now) {
-            const error = `cert ${cert.ix509.subjectDN} has already expired (notAfter: ${notAfter})`;
+            const error = `cert ${cert.ix509.subjectDN} has already expired (not after ${notAfter})`;
             console.log(error);
             return error;
         }

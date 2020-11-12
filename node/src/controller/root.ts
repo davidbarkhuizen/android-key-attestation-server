@@ -1,10 +1,10 @@
 import { default as express } from 'express';
-import { router as deviceRegController } from './deviceRegistration';
+import { attestationRouter  } from './attestation/attestation';
 
-export const router = express.Router();
+export const rootRouter = express.Router();
 
-router.use('/device-registration', deviceRegController);
+rootRouter.use('/attestation', attestationRouter);
 
-router.get('/', function (req, res) {
+rootRouter.get('/', function (req, res) {
   res.send('indrajala-fluid-server');
 });

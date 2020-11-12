@@ -1,13 +1,13 @@
 import { promisify } from 'util';
 
-import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../model/device";
+import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../device";
 
 import { randomBytes } from 'crypto';
 const randomBytesAsync = promisify(randomBytes);
 
-import { IDeviceRegPermissionRsp } from '../model/rqrsp';
 import { attestHardwareKey } from '../hw_attestation/attestation';
 import { derFromPem } from '../crypto/x509';
+import { IKeyAttInitRsp } from '../rqrsp/IKeyAttInitRsp';
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;
@@ -79,10 +79,10 @@ const googleRootCertsPEM = [
     -----END CERTIFICATE-----`
 ];
 
-export const requestPermissionToRegisterDevice = async (
+export const initiateKeyAttestation = async (
     minDeviceReqs: IMinimumDeviceRequirements,
     deviceFingerprint: IDeviceFingerprint
-): Promise<IDeviceRegPermissionRsp> => {
+): Promise<IKeyAttInitRsp> => {
 
     // check min requirements (e.g. OS level) based on fingerprint
     //
