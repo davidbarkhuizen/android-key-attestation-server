@@ -11,9 +11,9 @@ export interface IAuthorizationList {
     ecCurve: ECCurve;
     rsaPublicExponent: number;
     rollbackResistance: boolean;
-    activeDateTime: number;
+    activeDateTime: Date;
     originationExpireDateTime: Date;
-    usageExpireDateTime: number;
+    usageExpireDateTime: Date;
     noAuthRequired: boolean;
     userAuthType: number;
     authTimeout: number;

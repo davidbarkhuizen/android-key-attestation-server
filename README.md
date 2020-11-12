@@ -2,11 +2,15 @@
 
 ## TODO
 
+- investigate key usage discrepancies
 - refactor recent work on describing with enums
 - hw key attestation
   - cert chain validation (key usage and basic constraints is CA)
   - CRL checking
-  - move back to dedicated API methods, independent of device registration
+  - move back to dedicated API methods, independent of device registration (for the moment)
+
+- client
+  - error handling (esp HTTP failures)
 
 ## glossary
 

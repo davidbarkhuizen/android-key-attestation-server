@@ -1,11 +1,13 @@
 import { promisify } from 'util';
 
 import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../model/device";
+
 import { randomBytes } from 'crypto';
+const randomBytesAsync = promisify(randomBytes);
+
 import { attestHardwareKey } from './attestation';
 import { IDeviceRegPermissionRsp } from '../model/rqrsp';
 import { derFromPem } from './crypto';
-const randomBytesAsync = promisify(randomBytes);
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;

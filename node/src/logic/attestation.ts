@@ -2,6 +2,104 @@ import { pki, asn1 } from 'node-forge';
 import { pemFromDer } from './crypto';
 import { IX509CertFromPKICert } from './x509';
 
+import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
+import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from '../model/attestation/enums';
+import { enumMap } from '../util';
+import { IKeyDescriptionFromAsn1Node } from '../model/attestation/factory';
+
+import { default as fetch } from 'node-fetch';
+
+export const fetchGoogleAttestationCRL = async () => {
+
+    const url = 'https://android.googleapis.com/attestation/status';
+
+    const rsp = await fetch(url);
+    const json = await rsp.json();
+
+    console.log(json);
+};
+
+export const getAttestationExtension = (
+    cert: pki.Certificate
+) => {
+
+    const GoogleAttestationExtensionOID = '1.3.6.1.4.1.11129.2.1.17';
+    
+    // google key attestation
+    //
+    const attestationExt = cert.extensions.find(it => it.id == GoogleAttestationExtensionOID);
+    if (attestationExt) {
+
+        const asn1Seq = Buffer.from(attestationExt.value, 'ascii');
+
+        const parsed = parseDER(asn1Seq)[0];
+
+        const attAppIdNode = parsed.get('6.1.0');
+        attAppIdNode.reparse();
+
+        // DEV
+        //
+        // parsed // asn1.der
+        //     .summary(4, authorizationListLookup)
+        //     .forEach(line => console.log(line));
+
+        const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
+
+        const stripped = JSON.parse(JSON.stringify(keyDescription));
+
+        const describe = (o: any, indent = 0, enums: Map<string, Map<number, string>>) => {
+            
+            for(const key of Object.keys(o)) {
+                const val = o[key];
+                const valueType = typeof val;
+                
+                const isMapped = [...enums.keys()].includes(key); 
+
+                let mappedVal = null;
+
+                if (Array.isArray(val) && isMapped) {
+                    const mappedVals = [];
+                    for (const element of val as Array<any>) {
+                        mappedVal = enums.get(key).get(element);
+                        mappedVals.push(mappedVal);
+                    }
+                    console.log(`${' '.repeat(indent)}${key}: ${mappedVals}`);
+                }
+                else if (valueType == 'object') {
+                    console.log(`${' '.repeat(indent)}${key}`);
+                    describe(val, indent + 4, enums)
+                } else {
+                    
+                    if (isMapped) {
+                        mappedVal = enums.get(key).get(val);
+                    }
+
+                    const printVal = mappedVal ?? val;
+
+                    console.log(`${' '.repeat(indent)}${key} ${printVal.toString()}`);
+
+                }
+            }
+        };
+
+        const enumMapLookup = new Map(
+            [
+                ['purpose', enumMap(KeyPurpose)],
+                ['algorithm', enumMap(Algorithm)],
+                ['digest', enumMap(Digest)],
+                ['padding', enumMap(Padding)],
+                ['ecCurve', enumMap(ECCurve)],
+                ['origin', enumMap(KeyOrigin)],
+                ['verifiedBootState', enumMap(VerifiedBootState)],
+                ['attestationSecurityLevel', enumMap(SecurityLevel)],
+                ['keymasterSecurityLevel', enumMap(SecurityLevel)],
+            ]
+        );
+
+        describe(stripped, 0, enumMapLookup);
+    }
+};
+
 export const attestHardwareKey = async (
     challenge: String,
     certChainDER: Array<string>,
@@ -160,12 +258,11 @@ export const attestHardwareKey = async (
         } ${it.ix509.isCA ? "(CA)": "    "
         } ${it.ix509.subjectDN.padEnd(25, ' ')
         } ${remainingLifetimeMinutes} mins - ${usages.join(', ')}, `);
-        // console.log(it.ix509);
     })
 
-    const hwCert = sortedChain[sortedChain.length - 1];
+    const keyCert = sortedChain[sortedChain.length - 1];
 
-    console.log(hwCert.ix509);
+    getAttestationExtension(keyCert.pki);
 
     return null;
 };
