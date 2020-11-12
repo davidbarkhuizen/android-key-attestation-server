@@ -9,14 +9,14 @@ import { IKeyDescriptionFromAsn1Node } from '../model/attestation/factory';
 
 import { default as fetch } from 'node-fetch';
 
-export const fetchGoogleAttestationCRL = async () => {
+export const fetchGoogleAttestationCRL = async (): Promise<any> => {
 
     const url = 'https://android.googleapis.com/attestation/status';
 
     const rsp = await fetch(url);
     const json = await rsp.json();
 
-    console.log(json);
+    return JSON.stringify(json);
 };
 
 export const getAttestationExtension = (
