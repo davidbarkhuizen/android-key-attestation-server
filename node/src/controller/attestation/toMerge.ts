@@ -1,13 +1,13 @@
 import { promisify } from 'util';
 
-import { IDeviceFingerprint, IMinimumDeviceRequirements } from "../device";
-
 import { randomBytes } from 'crypto';
 const randomBytesAsync = promisify(randomBytes);
 
-import { attestHardwareKey } from './attestation';
-import { derFromPem } from '../crypto/x509';
-import { IKeyAttInitRsp } from '../controller/attestation/rqrsp/IKeyAttInitRsp';
+import { attestHardwareKey } from '../../hw_attestation/attestation';
+import { derFromPem } from '../../crypto/x509';
+import { IKeyAttInitRsp } from './rqrsp/IKeyAttInitRsp';
+import { IDeviceFingerprint } from '../../hw_attestation/model/IDeviceFingerprint';
+import { IMinimumDeviceRequirements } from '../../hw_attestation/model/IMinimumDeviceRequirements';
 
 let registrationID = 0; 
 let hwAttestationChallenge = null;
@@ -108,7 +108,7 @@ export const initiateKeyAttestation = async (
     }
 };
 
-export const registerDevice = async (
+export const attestKey = async (
     minDeviceReqs: IMinimumDeviceRequirements,
     registrationID: string,
     hwAttestationKeyChain: Array<string>

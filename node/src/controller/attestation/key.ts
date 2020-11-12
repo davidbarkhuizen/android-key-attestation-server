@@ -1,5 +1,5 @@
 import { default as express } from 'express';
-import { registerDevice, initiateKeyAttestation } from '../../hw_attestation/deviceRegistration';
+import { attestKey, initiateKeyAttestation } from './toMerge';
 import { IKeyAttInitRq } from './rqrsp/IKeyAttInitRq';
 import { IKeyAttRq } from './rqrsp/IKeyAttRq';
 
@@ -24,9 +24,9 @@ keyRouter.post('/init', async (req, res) => {
 keyRouter.post('/attest', async (req, res) => {
 
     const rq = req.body as IKeyAttRq;
-    const regResult = await registerDevice(
+    const regResult = await attestKey(
         minDeviceRequirements,
-        rq.registrationID,
+        rq.attestationID,
         rq.hwAttestationKeyChain
     );
 
