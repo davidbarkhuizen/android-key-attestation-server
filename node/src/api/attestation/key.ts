@@ -1,35 +1,32 @@
 import { default as express } from 'express';
-import { attestKey, initiateKeyAttestation } from './toMerge';
+import { attestHardwareKey, initiateKeyAttestation } from '../../key_attestation/attestation';
 import { IKeyAttInitRq } from './rqrsp/IKeyAttInitRq';
+import { IKeyAttInitRsp } from './rqrsp/IKeyAttInitRsp';
 import { IKeyAttRq } from './rqrsp/IKeyAttRq';
+import { IKeyAttRsp } from './rqrsp/IKeyAttRsp';
 
 export const keyRouter = express.Router();
-
-// TODO get from repo
-const minDeviceRequirements = {
-    apiLevel: 28
-};
 
 keyRouter.post('/init', async (req, res) => {
 
     const rq = req.body as IKeyAttInitRq;
 
-    const response = await initiateKeyAttestation(
-        minDeviceRequirements,
-        rq.deviceFingerprint
-    );
+    const result = await initiateKeyAttestation(rq.deviceFingerprint);
 
-    res.status(200).json(response);
+    res.status(200).json({
+        succeeded: true,
+        reference: result.reference,    
+        keyParams: result.keyParams
+    } as IKeyAttInitRsp);
 });
 
 keyRouter.post('/attest', async (req, res) => {
 
     const rq = req.body as IKeyAttRq;
-    const regResult = await attestKey(
-        minDeviceRequirements,
-        rq.reference,
-        rq.certChain
-    );
+    const result = await attestHardwareKey(rq.reference, rq.certChain);
 
-    res.status(200).json(regResult);
+    res.status(200).json({
+        reference: result.reference,
+        succeeded: result.succeeded
+    } as IKeyAttRsp);
 });

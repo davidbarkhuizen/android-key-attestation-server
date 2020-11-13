@@ -1,9 +1,9 @@
 import { IAsymKeyParams } from "./IAsymKeyParams";
-import { KeyAttestationFailureReason } from "./KeyAttestationFailureReason";
+import { InitKeyAttestationFailureReason } from "./InitKeyAttestationFailureReason";
 
 export interface IInitKeyAttestationResult {
     succeeded: boolean;
-    failureReason: KeyAttestationFailureReason;
+    failureReason: InitKeyAttestationFailureReason;
     
     reference: string;
     keyParams: IAsymKeyParams;

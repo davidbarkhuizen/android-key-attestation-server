@@ -17,6 +17,17 @@ import { derFromPem, IX509CertFromPKICert, pemFromDer } from '../crypto/x509';
 import { IKeyAttInitRsp } from '../api/attestation/rqrsp/IKeyAttInitRsp';
 import { IMinimumDeviceRequirements } from './model/google/IMinimumDeviceRequirements';
 import { IDeviceFingerprint } from './model/IDeviceFingerprint';
+import { IInitKeyAttestationResult } from './model/IInitKeyAttestationResult';
+import { KeyAttestationFailureReason } from './model/KeyAttestationFailureReason';
+import { InitKeyAttestationFailureReason } from './model/InitKeyAttestationFailureReason';
+import { IKeyAttestationRecord } from '../dal/model/IKeyAttestationRecord';
+import { getGoogleKeyAttestationRootCertsPEM, getKeyAttRecordForReference, setKeyAttRecord } from '../dal/dal';
+import { IKeyAttestationResult } from './model/IKeyAttestationResult';
+
+// TODO get from repo
+const minDeviceReqs = {
+    apiLevel: 28
+};
 
 const crlSchema = {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -154,12 +165,21 @@ export const getAttestationExtension = (
 };
 
 export const attestHardwareKey = async (
-    challenge: String,
-    certChainDER: Array<string>,
-    validGoogleRootCertsDER: Array<string>,
-): Promise<string> => {
+    reference: string,
+    hwAttestationKeyChain: Array<string>
+): Promise<IKeyAttestationResult> => {
 
     console.log('HW key attestation');
+
+    const record = await getKeyAttRecordForReference(reference);
+    if (record == null) {
+        throw Error('unknown attestation record');
+    }
+
+    const googleRootCertsPEM = await getGoogleKeyAttestationRootCertsPEM();
+    const googleRootCertsDER = googleRootCertsPEM.map(pem => derFromPem(pem));
+
+    const certChainDER = googleRootCertsPEM.map(pem => derFromPem(pem));
 
     const certChain = certChainDER
         .map(der => ({
@@ -181,9 +201,17 @@ export const attestHardwareKey = async (
         rootCerts.map(it => it.ix509.subjectDN).join(', ')}`);
 
     if (rootCerts.length == 0) {
-        return 'no self-signed root cert';
+        return {
+            succeeded: false,
+            error: KeyAttestationFailureReason.TrustChainDoesNotContainARoot,
+            reference: record.reference
+        }
     } else if (rootCerts.length > 1) {
-        return 'too many root certs';
+        return {
+            succeeded: false,
+            error: KeyAttestationFailureReason.TrustChainContainsMultipleRoots,
+            reference: record.reference
+        }
     }
 
     const rootCert = rootCerts[0];
@@ -197,21 +225,33 @@ export const attestHardwareKey = async (
         rootSigVerified = pki.verifyCertificateChain(caStore, [ rootCert.pki ]);
     } catch (e) {
         console.log(`error during verification of self-signature of root cert: ${e}`);
-        return e.toString(e);
+        return {
+            succeeded: false,
+            error: KeyAttestationFailureReason.TrustChainSignatureError,
+            reference: record.reference
+        }
     }
     console.log(`${rootSigVerified ? 'verified' : 'failed to verify'} self-signature of 0 ${rootCert.ix509.subjectDN} root cert`)
     
     if (!rootSigVerified) {
-        return `failed to verify self-signature of root cert ${rootCert.ix509.subjectDN}`;
+        return {
+            succeeded: false,
+            error: KeyAttestationFailureReason.TrustChainSignatureError,
+            reference: record.reference
+        }
     }
 
     // confirm root cert as known
     //
-    const isKnownValidRootCert = validGoogleRootCertsDER.includes(rootCert.der);
+    const isKnownValidRootCert = googleRootCertsDER.includes(rootCert.der);
     console.log(`root cert ${isKnownValidRootCert ? "is": "is not"} a known valid Google root HW attestation cert`);
     
     if (!isKnownValidRootCert) {
-        return `root cert ${rootCert.ix509.subjectDN} is not a known valid Google root`;
+        return {
+            succeeded: false,
+            error: KeyAttestationFailureReason.TrustChainDoesNotContainAValidKnownRoot,
+            reference: record.reference
+        }
     }
 
     const sortedChain = [rootCert];
@@ -230,7 +270,12 @@ export const attestHardwareKey = async (
                 } unprocessed certs remain`;
             
             console.log(error);
-            return error;
+            
+            return {
+                succeeded: false,
+                error: KeyAttestationFailureReason.TrustChainIsMissingALink,
+                reference: record.reference
+            }
         }
         sortedChain.push(child);
         nonRootCerts = nonRootCerts.filter(it => it != child);
@@ -245,7 +290,12 @@ export const attestHardwareKey = async (
             console.error(e);
             const error = `error during verification of signature of cert ${child.ix509.subjectDN} by ${parent.ix509.subjectDN}: ${e.toString()}`;
             console.log(error);
-            return error;
+            
+            return {
+                succeeded: false,
+                error: KeyAttestationFailureReason.TrustChainSignatureError,
+                reference: record.reference
+            }
         }
 
         console.log(`${sigVerified ? 'verified' : 'failed to verify'} ${childChainIndex} ${child.ix509.subjectDN} signed by ${childChainIndex - 1} ${parent.ix509.subjectDN}`)
@@ -261,14 +311,24 @@ export const attestHardwareKey = async (
         if (notBefore > now) {
             const error = `cert ${cert.ix509.subjectDN} is not yet valid as of ${now} (not before ${notBefore})`;
             console.log(error);      
-            return error;
+            
+            return {
+                succeeded: false,
+                error: KeyAttestationFailureReason.TrustChainNodeNotYetValid,
+                reference: record.reference
+            };
         }
 
         const notAfter = cert.pki.validity.notAfter;
         if (notAfter < now) {
             const error = `cert ${cert.ix509.subjectDN} has already expired (not after ${notAfter})`;
             console.log(error);
-            return error;
+            
+            return {
+                succeeded: false,
+                error: KeyAttestationFailureReason.TrustChainNodeExpired,
+                reference: record.reference
+            };
         }
     }
     console.log(`all certs are temporally valid as of ${now}`);
@@ -291,7 +351,11 @@ export const attestHardwareKey = async (
         const error = `chain is invalid - it contains ${revoked.length} revoked cert(s): ${revokedSubjects}`;
         console.log(error);
         
-        return error;
+        return {
+            succeeded: false,
+            error: KeyAttestationFailureReason.TrustChainContainsARevokedElement,
+            reference: record.reference
+        };
     }
 
     console.log('chain contains no known revoked certs');
@@ -340,64 +404,90 @@ export const attestHardwareKey = async (
 
     getAttestationExtension(keyCert.pki);
 
-    return null;
+    // TODO check
+    // TODO update record
+
+    return {
+        error: null,
+        reference: record.reference,
+        succeeded: true
+    }
 };
 
 export const initiateKeyAttestation = async (
-    minDeviceReqs: IMinimumDeviceRequirements,
     deviceFingerprint: IDeviceFingerprint
-): Promise<IKeyAttInitRsp> => {
-
-    // TODO do not return response, controller method must do that
-    // return InitKeyAttestationResult {
-    //      succeeded: boolean;
-    //      failureReason: KeyAttestationFailureReason;
-    //      reference: string;
-    // }
+): Promise<IInitKeyAttestationResult> => {
 
     // check min requirements (e.g. OS level) based on fingerprint
     //
     if (deviceFingerprint.apiLevel < minDeviceReqs.apiLevel) {
-        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient (${minDeviceReqs.apiLevel})`)
-        return null
+        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient, minimum is ${minDeviceReqs.apiLevel}`)
+        return {
+            succeeded: false,
+            failureReason: InitKeyAttestationFailureReason.InsufficientApiLevel,
+            keyParams: null,
+            reference: null
+        }
     }
 
     // create random challenge for hw key attestation
     //
-    const challenge = await randomBytesAsync(8);
+    let challenge: Buffer = null;
+    try {
+        challenge = await randomBytesAsync(8);
+    } catch (e) {
+        console.error('error getting random bytes for challenge', e);
+        return {
+            succeeded: false,
+            failureReason: InitKeyAttestationFailureReason.NoSourceOfRandomness,
+            keyParams: null,
+            reference: null
+        } 
+    }
   
     // persist request with nonces, returning reg ID (not DB id)
 
-    return {
-        succeeded: true,
+    const keyParams = {
+        challenge: challenge.toString('hex'),
+        lifetimeMinutes: 60,
+        digest: Digest.SHA_2_512,
+        ecCurve: null,
+        padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
+        purpose: KeyPurpose.Encrypt,
+        rsaExponent: 65537,
+        serialNumber: 1,
+        sizeInBits: 2048
+    };
+    
+    const record: IKeyAttestationRecord = {
+        id: uuidv4(),
         reference: uuidv4(),
-        keyParams: {
-            challenge: challenge.toString('hex'),
-            lifetimeMinutes: 60,
-            digest: Digest.SHA_2_512,
-            ecCurve: null,
-            padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
-            purpose: KeyPurpose.Encrypt,
-            rsaExponent: 65537,
-            serialNumber: 1,
-            sizeInBits: 2048
+
+        keyParams, 
+        chain: null,
+        claims: null,        
+    
+        attested: null,
+        error: null
+    };
+
+    let persisted = false;
+    try {
+        persisted = await setKeyAttRecord(record);
+    } catch (e) {
+        console.error('error persisting AttestationRecord', e);
+        return {
+            succeeded: false,
+            failureReason: InitKeyAttestationFailureReason.DataAccessLayerError,
+            keyParams: null,
+            reference: null
         }
     }
-};
-
-export const attestKey = async (
-    minDeviceReqs: IMinimumDeviceRequirements,
-    registrationID: string,
-    hwAttestationKeyChain: Array<string>
-) => {
-
-    const keyAttestation = await attestHardwareKey(
-        hwAttestationChallenge, 
-        hwAttestationKeyChain,
-        googleRootCertsPEM.map(pem => derFromPem(pem))
-    );
 
     return {
-        registered: false
-    };
+        succeeded: persisted,
+        failureReason: null,
+        keyParams,
+        reference: record.reference
+    }
 };

@@ -1,3 +1,4 @@
 export interface IKeyAttRsp {
-    registered: Boolean;
+    reference: string;
+    succeeded: true;
 }

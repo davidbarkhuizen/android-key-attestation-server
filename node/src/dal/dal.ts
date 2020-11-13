@@ -11,6 +11,17 @@ export const getKeyAttRecord = async (id: string): Promise<IKeyAttestationRecord
     return keyAttRecRepo.get(id);
 };
 
+export const getKeyAttRecordForReference = async (reference: string): Promise<IKeyAttestationRecord> => {
+    
+    const values = keyAttRecRepo.values();
+
+    console.log(reference);
+
+    console.log(... values);
+
+    return [... values].find(rec => rec.reference.localeCompare(reference) == 0);
+};
+
 // ---------------------------------------------------
 
 const googleKeyAttRootCertsPEMRepo = [];
