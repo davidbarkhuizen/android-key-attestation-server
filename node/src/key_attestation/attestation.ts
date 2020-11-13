@@ -166,7 +166,7 @@ export const getAttestationExtension = (
 
 export const attestHardwareKey = async (
     reference: string,
-    hwAttestationKeyChain: Array<string>
+    trustChainDER: Array<string>
 ): Promise<IKeyAttestationResult> => {
 
     console.log('HW key attestation');
@@ -179,9 +179,7 @@ export const attestHardwareKey = async (
     const googleRootCertsPEM = await getGoogleKeyAttestationRootCertsPEM();
     const googleRootCertsDER = googleRootCertsPEM.map(pem => derFromPem(pem));
 
-    const certChainDER = googleRootCertsPEM.map(pem => derFromPem(pem));
-
-    const certChain = certChainDER
+    const certChain = trustChainDER
         .map(der => ({
             der,
             pki: pki.certificateFromAsn1(asn1.fromDer(Buffer.from(der, 'hex').toString('binary'))),
@@ -192,7 +190,7 @@ export const attestHardwareKey = async (
         }));
 
     console.log(`${
-        certChainDER.length} certs in chain: ${
+        trustChainDER.length} certs in chain: ${
         certChain.map(it => it.ix509.subjectDN).join(', ')}`);
 
     const rootCerts = certChain.filter(it => it.ix509.issuerDN == it.ix509.subjectDN);

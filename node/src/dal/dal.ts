@@ -13,13 +13,8 @@ export const getKeyAttRecord = async (id: string): Promise<IKeyAttestationRecord
 
 export const getKeyAttRecordForReference = async (reference: string): Promise<IKeyAttestationRecord> => {
     
-    const values = keyAttRecRepo.values();
-
-    console.log(reference);
-
-    console.log(... values);
-
-    return [... values].find(rec => rec.reference.localeCompare(reference) == 0);
+    const values = Array.from(keyAttRecRepo.values());
+    return values.find(rec => rec.reference.localeCompare(reference) == 0);
 };
 
 // ---------------------------------------------------
@@ -39,3 +34,9 @@ export const removeGoogleKeyAttestationRootCertPEM = (pem: string) => {
         googleKeyAttRootCertsPEMRepo.indexOf(pem)
     );
 };
+
+import { googleRootCertsPEM } from './seed.data';
+
+googleRootCertsPEM.forEach(
+    it => addGoogleKeyAttestationRootCertPEM(it)
+);
