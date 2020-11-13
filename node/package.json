@@ -6,10 +6,10 @@
   "scripts": {
     "build": "tsc",
     "test": "mocha -r ts-node/register test/**/*.spec.ts",
-    "build-test": "npm run build && npm run test",  
+    "build-test": "npm run build && npm run test",
     "build-and-run": "tsc && node dist/src/server.js",
     "dev": "cross-env FLUID_SERVER_PORT=8777 ./node_modules/nodemon/bin/nodemon.js -e ts --exec 'npm run build-and-run'"
-},
+  },
   "keywords": [
     "identity",
     "integrity",
@@ -42,6 +42,7 @@
     "jsonschema": "^1.4.0",
     "node-fetch": "^2.6.1",
     "node-forge": "^0.10.0",
-    "pkijs": "^2.1.90"
+    "pkijs": "^2.1.90",
+    "uuid": "^8.3.1"
   }
 }

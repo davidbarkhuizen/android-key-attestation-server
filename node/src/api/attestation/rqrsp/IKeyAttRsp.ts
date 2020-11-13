@@ -1,3 +1,3 @@
 export interface IKeyAttRsp {
-    registered: Boolean
+    registered: Boolean;
 }

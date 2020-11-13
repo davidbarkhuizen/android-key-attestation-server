@@ -1,6 +1,8 @@
-export interface IAttestationRecord {
+export interface IKeyAttestationRecord {
+    id: string;
     
-    attestationID: string;
+    reference: string;
+    
     challenge: string;
 
     chain: Array<string>;

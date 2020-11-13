@@ -1,8 +1,7 @@
+import { IAsymKeyParams } from "../../../key_attestation/model/IAsymKeyParams";
+
 export interface IKeyAttInitRsp {
-    attestationID: string,
-    challenge: string
-    
-    keyLifeTimeMinutes: Number,
-    keySizeBits: Number,
-    keySerialNumber: Number
+    succeeded: boolean;
+    reference: string;    
+    keyParams: IAsymKeyParams;
 }

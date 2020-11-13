@@ -5,6 +5,7 @@ import { IKeyAttRq } from './rqrsp/IKeyAttRq';
 
 export const keyRouter = express.Router();
 
+// TODO get from repo
 const minDeviceRequirements = {
     apiLevel: 28
 };
@@ -13,12 +14,12 @@ keyRouter.post('/init', async (req, res) => {
 
     const rq = req.body as IKeyAttInitRq;
 
-    const permission = await initiateKeyAttestation(
+    const response = await initiateKeyAttestation(
         minDeviceRequirements,
         rq.deviceFingerprint
     );
 
-    res.status(200).json(permission);
+    res.status(200).json(response);
 });
 
 keyRouter.post('/attest', async (req, res) => {
@@ -26,8 +27,8 @@ keyRouter.post('/attest', async (req, res) => {
     const rq = req.body as IKeyAttRq;
     const regResult = await attestKey(
         minDeviceRequirements,
-        rq.attestationID,
-        rq.hwAttestationKeyChain
+        rq.reference,
+        rq.certChain
     );
 
     res.status(200).json(regResult);

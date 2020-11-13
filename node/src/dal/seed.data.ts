@@ -1,19 +1,3 @@
-import { promisify } from 'util';
-
-import { randomBytes } from 'crypto';
-const randomBytesAsync = promisify(randomBytes);
-
-import { attestHardwareKey } from '../../key_attestation/attestation';
-import { derFromPem } from '../../crypto/x509';
-import { IKeyAttInitRsp } from './rqrsp/IKeyAttInitRsp';
-import { IDeviceFingerprint } from '../../key_attestation/model/IDeviceFingerprint';
-import { IMinimumDeviceRequirements } from '../../key_attestation/model/google/IMinimumDeviceRequirements';
-
-let registrationID = 0; 
-let hwAttestationChallenge = null;
-const keySizeBits = 2048;
-const keyLifeTimeMinutes = 24 * 60;
-
 const googleRootCertsPEM = [
     `-----BEGIN CERTIFICATE-----
     MIIFYDCCA0igAwIBAgIJAOj6GWMU0voYMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
@@ -78,49 +62,3 @@ const googleRootCertsPEM = [
     ex0SdDrx+tWUDqG8At2JHA==
     -----END CERTIFICATE-----`
 ];
-
-export const initiateKeyAttestation = async (
-    minDeviceReqs: IMinimumDeviceRequirements,
-    deviceFingerprint: IDeviceFingerprint
-): Promise<IKeyAttInitRsp> => {
-
-    // check min requirements (e.g. OS level) based on fingerprint
-    //
-    if (deviceFingerprint.apiLevel < minDeviceReqs.apiLevel) {
-        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient (${minDeviceReqs.apiLevel})`)
-        return null
-    }
-
-    registrationID = registrationID + 1;
-
-    // create random challenge for hw key attestation
-    //
-    hwAttestationChallenge = await randomBytesAsync(8);
-  
-    // persist request with nonces, returning reg ID (not DB id)
-
-    return {
-        attestationID: registrationID.toString(),
-        challenge: hwAttestationChallenge.toString('hex'),
-        keyLifeTimeMinutes,
-        keySizeBits,
-        keySerialNumber: 1
-    }
-};
-
-export const attestKey = async (
-    minDeviceReqs: IMinimumDeviceRequirements,
-    registrationID: string,
-    hwAttestationKeyChain: Array<string>
-) => {
-
-    const keyAttestation = await attestHardwareKey(
-        hwAttestationChallenge, 
-        hwAttestationKeyChain,
-        googleRootCertsPEM.map(pem => derFromPem(pem))
-    );
-
-    return {
-        registered: false
-    };
-};

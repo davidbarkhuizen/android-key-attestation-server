@@ -9,7 +9,7 @@ export enum KeyPurpose {
     Decrypt = 1,
     Sign = 2,
     Verify = 3,
-    DericeKey = 4,
+    DeriveKey = 4,
     Wrapkey = 5,
 };
 

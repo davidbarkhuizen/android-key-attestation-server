@@ -1,4 +1,4 @@
 export interface IKeyAttRq {
-    attestationID: string,
-    hwAttestationKeyChain: Array<string>
+    reference: string;
+    certChain: Array<string>;
 }

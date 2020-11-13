@@ -1,13 +1,22 @@
 import { Validator } from 'jsonschema';
 import { pki, asn1 } from 'node-forge';
 
+import { promisify } from 'util';
+import { randomBytes } from 'crypto';
+const randomBytesAsync = promisify(randomBytes);
+
+const { v4: uuidv4 } = require('uuid');
+
 import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
 import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from './model/google/enums';
 import { enumMap } from '../general/util';
 import { IKeyDescriptionFromAsn1Node } from './factory';
 
 import { default as fetch } from 'node-fetch';
-import { IX509CertFromPKICert, pemFromDer } from '../crypto/x509';
+import { derFromPem, IX509CertFromPKICert, pemFromDer } from '../crypto/x509';
+import { IKeyAttInitRsp } from '../api/attestation/rqrsp/IKeyAttInitRsp';
+import { IMinimumDeviceRequirements } from './model/google/IMinimumDeviceRequirements';
+import { IDeviceFingerprint } from './model/IDeviceFingerprint';
 
 const crlSchema = {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -332,4 +341,63 @@ export const attestHardwareKey = async (
     getAttestationExtension(keyCert.pki);
 
     return null;
+};
+
+export const initiateKeyAttestation = async (
+    minDeviceReqs: IMinimumDeviceRequirements,
+    deviceFingerprint: IDeviceFingerprint
+): Promise<IKeyAttInitRsp> => {
+
+    // TODO do not return response, controller method must do that
+    // return InitKeyAttestationResult {
+    //      succeeded: boolean;
+    //      failureReason: KeyAttestationFailureReason;
+    //      reference: string;
+    // }
+
+    // check min requirements (e.g. OS level) based on fingerprint
+    //
+    if (deviceFingerprint.apiLevel < minDeviceReqs.apiLevel) {
+        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient (${minDeviceReqs.apiLevel})`)
+        return null
+    }
+
+    // create random challenge for hw key attestation
+    //
+    const challenge = await randomBytesAsync(8);
+  
+    // persist request with nonces, returning reg ID (not DB id)
+
+    return {
+        succeeded: true,
+        reference: uuidv4(),
+        keyParams: {
+            challenge: challenge.toString('hex'),
+            lifetimeMinutes: 60,
+            digest: Digest.SHA_2_512,
+            ecCurve: null,
+            padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
+            purpose: KeyPurpose.Encrypt,
+            rsaExponent: 65537,
+            serialNumber: 1,
+            sizeInBits: 2048
+        }
+    }
+};
+
+export const attestKey = async (
+    minDeviceReqs: IMinimumDeviceRequirements,
+    registrationID: string,
+    hwAttestationKeyChain: Array<string>
+) => {
+
+    const keyAttestation = await attestHardwareKey(
+        hwAttestationChallenge, 
+        hwAttestationKeyChain,
+        googleRootCertsPEM.map(pem => derFromPem(pem))
+    );
+
+    return {
+        registered: false
+    };
 };
