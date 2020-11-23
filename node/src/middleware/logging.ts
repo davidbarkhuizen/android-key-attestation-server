@@ -1,4 +1,4 @@
-export const logRequest = (req, rsp, next) => {
+export const logRequest = (req: Express.Request, rsp: Express.Response, next: () => void): void => {
 
     // if (req.body && req.body != {}) {
     //     console.log('RQ', req.body);
@@ -7,7 +7,7 @@ export const logRequest = (req, rsp, next) => {
     next()
 };
 
-export const logResponse = (req, rsp, next) => {
+export const logResponse = (req: Express.Request, rsp: Express.Response, next: () => void): void => {
 
     // if (rsp.body && rsp.body != {}) {
     //     console.log('RSP', rsp.body);

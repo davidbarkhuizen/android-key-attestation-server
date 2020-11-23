@@ -1,5 +1,3 @@
-import { LocalBooleanValueBlock } from "asn1js";
-
 export interface IKeyAttestationRootCert {
     id: string;
 

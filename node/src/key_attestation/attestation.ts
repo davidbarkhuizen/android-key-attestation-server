@@ -5,17 +5,15 @@ import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 const randomBytesAsync = promisify(randomBytes);
 
-const { v4: uuidv4 } = require('uuid');
+import { v4 } from 'uuid';
 
-import { parseDER, authorizationListLookup } from '@indrajala/asn1der';
+import { parseDER } from '@indrajala/asn1der';
 import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLevel, VerifiedBootState } from './model/google/enums';
 import { enumMap } from '../general/util';
 import { IKeyDescriptionFromAsn1Node } from './factory';
 
 import { default as fetch } from 'node-fetch';
 import { derFromPem, IX509CertFromPKICert, pemFromDer } from '../crypto/x509';
-import { IKeyAttInitRsp } from '../api/attestation/rqrsp/IKeyAttInitRsp';
-import { IMinimumDeviceRequirements } from './model/google/IMinimumDeviceRequirements';
 import { IDeviceFingerprint } from './model/IDeviceFingerprint';
 import { IInitKeyAttestationResult } from './model/IInitKeyAttestationResult';
 import { KeyAttestationFailureReason } from './model/KeyAttestationFailureReason';
@@ -79,7 +77,7 @@ export const fetchGoogleAttestationCRL = async (): Promise<Array<string>> => {
     const rsp = await fetch(url);
     const crl = await rsp.json();
 
-    var v = new Validator();
+    const v = new Validator();
     const validationResult = v.validate(crl, crlSchema);
 
     console.log(`valid: ${validationResult.valid}`);
@@ -91,7 +89,7 @@ export const fetchGoogleAttestationCRL = async (): Promise<Array<string>> => {
 
 export const getAttestationExtension = (
     cert: pki.Certificate
-) => {
+): void => {
 
     const GoogleAttestationExtensionOID = '1.3.6.1.4.1.11129.2.1.17';
     
@@ -111,7 +109,7 @@ export const getAttestationExtension = (
 
         const stripped = JSON.parse(JSON.stringify(keyDescription));
 
-        const describe = (o: any, indent = 0, enums: Map<string, Map<number, string>>) => {
+        const describe = (o: unknown, indent = 0, enums: Map<string, Map<number, string>>) => {
             
             for(const key of Object.keys(o)) {
                 const val = o[key];
@@ -123,7 +121,7 @@ export const getAttestationExtension = (
 
                 if (Array.isArray(val) && isMapped) {
                     const mappedVals = [];
-                    for (const element of val as Array<any>) {
+                    for (const element of val as Array<number>) {
                         mappedVal = enums.get(key).get(element);
                         mappedVals.push(mappedVal);
                     }
@@ -458,8 +456,8 @@ export const initiateKeyAttestation = async (
     };
     
     const record: IKeyAttestationRecord = {
-        id: uuidv4(),
-        reference: uuidv4(),
+        id: v4(),
+        reference: v4(),
 
         keyParams, 
         chain: null,

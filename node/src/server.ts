@@ -8,7 +8,8 @@ import { getIpsForInterfaces } from './general/util';
 
 // DEBUG
 //
-require('source-map-support').install();
+import { default as sourceMapSupport } from 'source-map-support';
+sourceMapSupport.install();
 
 const onServerStarted = (config: IConfigurationData) => {
     
@@ -17,7 +18,7 @@ const onServerStarted = (config: IConfigurationData) => {
     console.log(`http server listening on http://host:${config.port}, where`);
     
     const ipsByInterface = getIpsForInterfaces();
-    for (var [interfaceName, hosts] of ipsByInterface) {
+    for (const [interfaceName, hosts] of ipsByInterface) {
         console.log(`for network interface ${interfaceName}, host E {${hosts.join(', ')}}`);
     }
 };

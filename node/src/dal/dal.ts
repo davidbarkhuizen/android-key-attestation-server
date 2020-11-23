@@ -25,11 +25,11 @@ export const getGoogleKeyAttestationRootCertsPEM = (): Array<string> => {
     return googleKeyAttRootCertsPEMRepo;
 };
 
-export const addGoogleKeyAttestationRootCertPEM = (pem: string) => {
+export const addGoogleKeyAttestationRootCertPEM = (pem: string): void => {
     googleKeyAttRootCertsPEMRepo.push(pem);
 };
 
-export const removeGoogleKeyAttestationRootCertPEM = (pem: string) => {
+export const removeGoogleKeyAttestationRootCertPEM = (pem: string): void => {
     googleKeyAttRootCertsPEMRepo.slice(
         googleKeyAttRootCertsPEMRepo.indexOf(pem)
     );

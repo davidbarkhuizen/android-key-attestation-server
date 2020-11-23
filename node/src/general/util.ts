@@ -30,7 +30,7 @@ export const safeDateFromMS = (ms: number | null): Date | null => {
     return new Date(ms);
 }
 
-export const enumMap = (o: any) => {
+export const enumMap = (o: Record<string, unknown>): Map<number, string> => {
 
     const source = Object.keys(o)
         .filter(key => !isNaN(parseInt(key)))

@@ -1,6 +1,6 @@
 export interface IX509Cert {
 
-    version: Number,
+    version: number,
     serialNumber: string,
     signature: string,
     // siginfo: { algorithmOid: '1.2.840.113549.1.1.11', parameters: {} },

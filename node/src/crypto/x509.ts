@@ -1,14 +1,13 @@
-import { fromBER } from 'asn1js';
 import * as forge from 'node-forge';
 import { IX509Cert } from './IX509Cert';
 
 
-export const pemFromDer = (hex: string) =>
+export const pemFromDer = (hex: string): string =>
     '-----BEGIN CERTIFICATE-----\n' 
     + (Buffer.from(hex, 'hex')).toString('base64').match(/.{0,64}/g).join('\n')
     + '-----END CERTIFICATE-----';
 
-export const derFromPem = (pem: string) => {
+export const derFromPem = (pem: string): string => {
 
     const b64 = pem
         .replace('-----BEGIN CERTIFICATE-----', '')
@@ -39,7 +38,7 @@ export const IX509CertFromPKICert = (cert: forge.pki.Certificate): IX509Cert => 
 
     // name constraints
     //
-    const nameConstraintsExt = cert.extensions.find(it => it.name == 'nameConstraints');
+    // const nameConstraintsExt = cert.extensions.find(it => it.name == 'nameConstraints');
     // TODO nameConstraintsExt
     
     return {

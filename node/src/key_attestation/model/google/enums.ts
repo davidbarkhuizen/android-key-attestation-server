@@ -11,14 +11,14 @@ export enum KeyPurpose {
     Verify = 3,
     DeriveKey = 4,
     Wrapkey = 5,
-};
+}
 
 export enum Algorithm {
     RSA = 1,
     EC = 3,
     AES = 32,
     HMAC = 128,
-};
+}
 
 export enum Digest {
     None = 0,
@@ -44,7 +44,7 @@ export enum ECCurve {
     P_256 = 1,
     P_384 = 2,
     P_521 = 3,
-};
+}
 
 export enum VerifiedBootState {
     Verified = 0,
@@ -65,4 +65,4 @@ export enum KeyOrigin {
     DERIVED = 1,
     IMPORTED = 2,
     UNKNOWN = 3,
-};
+}

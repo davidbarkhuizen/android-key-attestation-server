@@ -1,3 +1,3 @@
 export interface IMinimumDeviceRequirements {
-    apiLevel: Number
+    apiLevel: number
 }
