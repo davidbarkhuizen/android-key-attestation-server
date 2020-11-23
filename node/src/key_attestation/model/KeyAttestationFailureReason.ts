@@ -10,5 +10,6 @@ export enum KeyAttestationFailureReason {
     TrustChainNodeExpired,
     TrustChainContainsARevokedElement,
     TrustChainContainsAnInternalNodeWithoutSigningRights,
-    KeyAttestationCertHasNoAttestationExtension
+    KeyAttestationCertHasNoAttestationExtension,
+    ChallengeFailed
 }
