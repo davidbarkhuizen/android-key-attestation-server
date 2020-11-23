@@ -2,6 +2,13 @@
 
 ## TODO
 
+TEE - SBOX
+=> root of trust hash
+key params
+package
+hal keymaster version and whatwhat version
+level of attestation
+
 - investigate key usage discrepancies
 - refactor recent work on describing with enums
 - hw key attestation

@@ -1,4 +1,3 @@
-import { Validator } from 'jsonschema';
 import { pki, asn1 } from 'node-forge';
 
 import { promisify } from 'util';
@@ -12,7 +11,6 @@ import { Algorithm, Digest, ECCurve, KeyOrigin, KeyPurpose, Padding, SecurityLev
 import { enumMap } from '../general/util';
 import { IKeyDescriptionFromAsn1Node } from './factory';
 
-import { default as fetch } from 'node-fetch';
 import { derFromPem, IX509CertFromPKICert, pemFromDer } from '../crypto/x509';
 import { IDeviceFingerprint } from './model/IDeviceFingerprint';
 import { IInitKeyAttestationResult } from './model/IInitKeyAttestationResult';
@@ -21,145 +19,89 @@ import { InitKeyAttestationFailureReason } from './model/InitKeyAttestationFailu
 import { IKeyAttestationRecord } from '../dal/model/IKeyAttestationRecord';
 import { getGoogleKeyAttestationRootCertsPEM, getKeyAttRecordForReference, setKeyAttRecord } from '../dal/dal';
 import { IKeyAttestationResult } from './model/IKeyAttestationResult';
+import { fetchGoogleAttestationCRL } from './crl';
 
 // TODO get from repo
-const minDeviceReqs = {
+const minDeviceRequirements = {
     apiLevel: 28
-};
-
-const crlSchema = {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-      "entries": {
-        "description" : "Each entry represents the status of an attestation key. The dictionary-key is the certificate serial number in lowercase hex.",
-        "type": "object",
-        "propertyNames": {
-           "pattern": "^[a-f0-9]*$"
-        },
-        "additionalProperties": {
-          "type": "object",
-          "properties": {
-            "status": {
-              "description": "[REQUIRED] Current status of the key.",
-              "type": "string",
-              "enum": ["REVOKED", "SUSPENDED"]
-            },
-            "expires": {
-              "description": "[OPTIONAL] UTC date when certificate expires in ISO8601 format (YYYY-MM-DD). Can be used to clear expired certificates from the status list.",
-              "type": "string",
-              "format": "date"
-            },
-            "reason": {
-              "description": "[OPTIONAL] Reason for the current status.",
-              "type": "string",
-              "enum": ["UNSPECIFIED", "KEY_COMPROMISE", "CA_COMPROMISE", "SUPERSEDED", "SOFTWARE_FLAW"]
-            },
-            "comment": {
-              "description": "[OPTIONAL] Free form comment about the key status.",
-              "type": "string",
-              "maxLength": 140
-            }
-          },
-          "required": ["status"],
-          "additionalProperties": false
-        }
-      }
-    },
-    "required": ["entries"],
-    "additionalProperties": false
-  };
-
-export const fetchGoogleAttestationCRL = async (): Promise<Array<string>> => {
-
-    const url = 'https://android.googleapis.com/attestation/status';
-
-    const rsp = await fetch(url);
-    const crl = await rsp.json();
-
-    const v = new Validator();
-    const validationResult = v.validate(crl, crlSchema);
-
-    console.log(`valid: ${validationResult.valid}`);
-
-    return Object
-        .keys(crl.entries)
-        .map(it => it.toUpperCase());
 };
 
 export const getAttestationExtension = (
     cert: pki.Certificate
-): void => {
+): boolean => {
 
     const GoogleAttestationExtensionOID = '1.3.6.1.4.1.11129.2.1.17';
     
     // google key attestation
     //
     const attestationExt = cert.extensions.find(it => it.id == GoogleAttestationExtensionOID);
-    if (attestationExt) {
+    
+    if (!attestationExt) {
+        console.log('attestation cert does not contain an X.509 attestation extension');
+        return null; // TODO result KeyAttestationCertHasNoAttestationExtension
+    }    
 
-        const asn1Seq = Buffer.from(attestationExt.value, 'ascii');
+    const asn1Seq = Buffer.from(attestationExt.value, 'ascii');
 
-        const parsed = parseDER(asn1Seq)[0];
+    const parsed = parseDER(asn1Seq)[0];
 
-        const attAppIdNode = parsed.get('6.#709.0');
-        attAppIdNode.reparse();
+    const attAppIdNode = parsed.get('6.#709.0');
+    attAppIdNode.reparse();
 
-        const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
+    const keyDescription = IKeyDescriptionFromAsn1Node(parsed);
 
-        const stripped = JSON.parse(JSON.stringify(keyDescription));
+    const stripped = JSON.parse(JSON.stringify(keyDescription));
 
-        const describe = (o: unknown, indent = 0, enums: Map<string, Map<number, string>>) => {
+    const describe = (o: unknown, indent = 0, enums: Map<string, Map<number, string>>) => {
+        
+        for(const key of Object.keys(o)) {
+            const val = o[key];
+            const valueType = typeof val;
             
-            for(const key of Object.keys(o)) {
-                const val = o[key];
-                const valueType = typeof val;
-                
-                const isMapped = [...enums.keys()].includes(key); 
+            const isMapped = [...enums.keys()].includes(key); 
 
-                let mappedVal = null;
+            let mappedVal = null;
 
-                if (Array.isArray(val) && isMapped) {
-                    const mappedVals = [];
-                    for (const element of val as Array<number>) {
-                        mappedVal = enums.get(key).get(element);
-                        mappedVals.push(mappedVal);
-                    }
-                    console.log(`${' '.repeat(indent)}${key}: ${mappedVals}`);
+            if (Array.isArray(val) && isMapped) {
+                const mappedValues = [];
+                for (const element of val as Array<number>) {
+                    mappedVal = enums.get(key).get(element);
+                    mappedValues.push(mappedVal);
                 }
-                else if (valueType == 'object') {
-                    console.log(`${' '.repeat(indent)}${key}`);
-                    describe(val, indent + 4, enums)
-                } else {
-                    
-                    if (isMapped) {
-                        mappedVal = enums.get(key).get(val);
-                    }
-
-                    const printVal = mappedVal ?? val;
-
-                    console.log(`${' '.repeat(indent)}${key} ${printVal.toString()}`);
-
-                }
+                console.log(`${' '.repeat(indent)}${key}: ${mappedValues}`);
             }
-        };
+            else if (valueType == 'object') {
+                console.log(`${' '.repeat(indent)}${key}`);
+                describe(val, indent + 4, enums)
+            } else {
+                
+                if (isMapped) {
+                    mappedVal = enums.get(key).get(val);
+                }
 
-        const enumMapLookup = new Map(
-            [
-                ['purpose', enumMap(KeyPurpose)],
-                ['algorithm', enumMap(Algorithm)],
-                ['digest', enumMap(Digest)],
-                ['padding', enumMap(Padding)],
-                ['ecCurve', enumMap(ECCurve)],
-                ['origin', enumMap(KeyOrigin)],
-                ['verifiedBootState', enumMap(VerifiedBootState)],
-                ['attestationSecurityLevel', enumMap(SecurityLevel)],
-                ['keymasterSecurityLevel', enumMap(SecurityLevel)],
-            ]
-        );
+                const printVal = mappedVal ?? val;
 
-        describe(stripped, 0, enumMapLookup);
-    }
+                console.log(`${' '.repeat(indent)}${key} ${printVal.toString()}`);
+
+            }
+        }
+    };
+
+    const enumMapLookup = new Map(
+        [
+            ['purpose', enumMap(KeyPurpose)],
+            ['algorithm', enumMap(Algorithm)],
+            ['digest', enumMap(Digest)],
+            ['padding', enumMap(Padding)],
+            ['ecCurve', enumMap(ECCurve)],
+            ['origin', enumMap(KeyOrigin)],
+            ['verifiedBootState', enumMap(VerifiedBootState)],
+            ['attestationSecurityLevel', enumMap(SecurityLevel)],
+            ['keymasterSecurityLevel', enumMap(SecurityLevel)],
+        ]
+    );
+
+    describe(stripped, 0, enumMapLookup);
 };
 
 export const attestHardwareKey = async (
@@ -167,7 +109,7 @@ export const attestHardwareKey = async (
     trustChainDER: Array<string>
 ): Promise<IKeyAttestationResult> => {
 
-    console.log('HW key attestation');
+    console.log(`processing HW key attestation reference ${reference}`);
 
     const record = await getKeyAttRecordForReference(reference);
     if (record == null) {
@@ -356,7 +298,7 @@ export const attestHardwareKey = async (
 
     console.log('chain contains no known revoked certs');
 
-    console.log('validated cert chain:');
+    console.log('cert chain:');
     sortedChain.forEach((it, index) => {
 
         const usages = [];
@@ -396,11 +338,43 @@ export const attestHardwareKey = async (
         } ${remainingLifetimeMinutes} mins - ${usages.join(', ')}, `);
     })
 
+    const nonLeafCerts = sortedChain.slice(0, sortedChain.length - 1);
+
+    console.log('confirming that all non-leaf certs have the right to sign either data or key certs');
+    const unauthorizedToSign = nonLeafCerts
+        .filter(it => 
+            it.ix509.keyUsage.digitalSignature == false
+            &&
+            it.ix509.keyUsage.keyCertSign == false
+            );
+    if (unauthorizedToSign.length > 0) {
+        console.log(`a certificate(s) internal to the chain was found to not possess signing rights: ${
+            unauthorizedToSign.map(it => it.ix509.subjectDN).join(', ')
+        }`);
+
+        return {
+            succeeded: false,
+            error: KeyAttestationFailureReason.TrustChainContainsAnInternalNodeWithoutSigningRights,
+            reference: record.reference
+        };
+    }
+
     const keyCert = sortedChain[sortedChain.length - 1];
 
     getAttestationExtension(keyCert.pki);
 
     // TODO check
+
+    // teeEnforced
+    // purpose: Encrypt
+    // algorithm RSA
+    // keySize 2048
+    // digest: SHA_2_512
+    // padding: RSA_PKCS1_1_5_ENCRYPT
+    // rsaPublicExponent 65537
+    // origin GENERATED
+    // noAuthRequired true
+
     // TODO update record
 
     return {
@@ -416,8 +390,8 @@ export const initiateKeyAttestation = async (
 
     // check min requirements (e.g. OS level) based on fingerprint
     //
-    if (deviceFingerprint.apiLevel < minDeviceReqs.apiLevel) {
-        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient, minimum is ${minDeviceReqs.apiLevel}`)
+    if (deviceFingerprint.apiLevel < minDeviceRequirements.apiLevel) {
+        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient, minimum is ${minDeviceRequirements.apiLevel}`)
         return {
             succeeded: false,
             failureReason: InitKeyAttestationFailureReason.InsufficientApiLevel,
