@@ -1,6 +1,10 @@
-import { Digest, KeyPurpose, Padding } from "./google/enums";
+import { Algorithm, Digest, KeyPurpose, Padding } from "./google/enums";
 
 export interface IAsymKeyParams {
+
+    requireHSM: boolean;
+
+    algorithm: Algorithm;
 
     challenge: string;
 

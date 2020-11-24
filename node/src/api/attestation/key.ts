@@ -13,7 +13,7 @@ keyRouter.post('/init', async (req, res) => {
 
     const result = await initiateKeyAttestation(rq.deviceFingerprint);
 
-    console.log(`request to initiate HW key attestation ${result.succeeded ? 'granted' : 'rejected'}, reference ${result.reference}`);
+    console.log(`request to generate key: reference ${result.reference} - ${result.succeeded ? 'granted' : 'rejected'}`);
 
     res.status(200).json({
         succeeded: result.succeeded,

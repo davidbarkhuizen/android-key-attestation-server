@@ -20,7 +20,6 @@ import { IKeyAttestationResult } from './model/IKeyAttestationResult';
 import { validateHWAttestationTrustChain } from './chain';
 import { IKeyDescription } from './model/IKeyDescription';
 import { IAsymKeyParams } from './model/IAsymKeyParams';
-import { attestationRouter } from '../api/attestation/attestation';
 import { KeyAttestationFailureReason } from './model/KeyAttestationFailureReason';
 
 // TODO get from repo
@@ -47,9 +46,10 @@ const validateAttestedDataAgainstInstruction = (
 
     // purpose: KeyPurpose;
 
-    const instructedKeyPurpose = 
-    
-    
+    // TODO CONTINUE HERE...
+
+    //const instructedKeyPurpose = 
+        
     
     // sizeInBits: number;
     // serialNumber: number;
@@ -61,7 +61,7 @@ const validateAttestedDataAgainstInstruction = (
     // rsaExponent: number;
     // ecCurve: string;
 
-    return false;
+    return null;
 };
 
 export const getKeyDescriptionFromAttestationExtension = (
@@ -228,18 +228,34 @@ export const initiateKeyAttestation = async (
   
     // persist request with nonces, returning reg ID (not DB id)
 
-    const keyParams = {
+    // const keyParams: IAsymKeyParams = {
+    //     requireHSM: false,
+    //     algorithm: Algorithm.RSA,
+    //     challenge: challenge.toString('hex'),
+    //     lifetimeMinutes: 60,
+    //     digest: Digest.SHA_2_512,
+    //     ecCurve: null,
+    //     padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
+    //     purpose: KeyPurpose.Encrypt,
+    //     rsaExponent: 65537,
+    //     serialNumber: 1,
+    //     sizeInBits: 2048
+    // };
+    
+    const keyParams: IAsymKeyParams = {
+        requireHSM: false,
+        algorithm: Algorithm.EC,
         challenge: challenge.toString('hex'),
         lifetimeMinutes: 60,
         digest: Digest.SHA_2_512,
-        ecCurve: null,
+        ecCurve: 'secp256r1',
         padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
         purpose: KeyPurpose.Encrypt,
         rsaExponent: 65537,
         serialNumber: 1,
-        sizeInBits: 2048
+        sizeInBits: 256
     };
-    
+
     const record: IKeyAttestationRecord = {
         id: v4(),
         reference: v4(),
