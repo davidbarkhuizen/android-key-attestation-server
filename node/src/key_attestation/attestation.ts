@@ -27,41 +27,188 @@ const minDeviceRequirements = {
     apiLevel: 28
 };
 
+export const initiateKeyAttestation = async (
+    deviceFingerprint: IDeviceFingerprint
+): Promise<IInitKeyAttestationResult> => {
+
+    // check min requirements (e.g. OS level) based on fingerprint
+    //
+    if (deviceFingerprint.apiLevel < minDeviceRequirements.apiLevel) {
+        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient, minimum is ${minDeviceRequirements.apiLevel}`)
+        return {
+            succeeded: false,
+            failureReason: InitKeyAttestationFailureReason.InsufficientApiLevel,
+            keyParams: null,
+            reference: null
+        }
+    }
+
+    // create random challenge for hw key attestation
+    //
+    let challenge: Buffer = null;
+    try {
+        challenge = await randomBytesAsync(8);
+    } catch (e) {
+        console.error('error getting random bytes for challenge', e);
+        return {
+            succeeded: false,
+            failureReason: InitKeyAttestationFailureReason.NoSourceOfRandomness,
+            keyParams: null,
+            reference: null
+        } 
+    }
+  
+    // persist request with nonces, returning reg ID (not DB id)
+
+    const keyParams: IAsymKeyParams = {
+        requireHSM: false,
+        algorithm: Algorithm.RSA,
+        challenge: challenge.toString('hex'),
+        lifetimeMinutes: 60,
+        digest: Digest.SHA_2_512,
+        ecCurve: null,
+        padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
+        purpose: KeyPurpose.Encrypt,
+        rsaExponent: 65537,
+        serialNumber: 1,
+        sizeInBits: 2048
+    };
+    
+    // const keyParams: IAsymKeyParams = {
+    //     requireHSM: false,
+    //     algorithm: Algorithm.EC,
+    //     challenge: challenge.toString('hex'),
+    //     lifetimeMinutes: 60,
+    //     digest: Digest.SHA_2_512,
+    //     ecCurve: 'secp256r1',
+    //     padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
+    //     purpose: KeyPurpose.Encrypt,
+    //     rsaExponent: 65537,
+    //     serialNumber: 1,
+    //     sizeInBits: 256
+    // };
+
+    const record: IKeyAttestationRecord = {
+        id: v4(),
+        reference: v4(),
+
+        keyParams, 
+        chain: null,
+        claims: null,        
+    
+        attested: null,
+        error: null
+    };
+
+    let persisted = false;
+    try {
+        persisted = await setKeyAttRecord(record);
+    } catch (e) {
+        console.error('error persisting AttestationRecord', e);
+        return {
+            succeeded: false,
+            failureReason: InitKeyAttestationFailureReason.DataAccessLayerError,
+            keyParams: null,
+            reference: null
+        }
+    }
+
+    return {
+        succeeded: persisted,
+        failureReason: null,
+        keyParams,
+        reference: record.reference
+    }
+};
+
 const validateAttestedDataAgainstInstruction = (
     instruction: IAsymKeyParams,
     attested: IKeyDescription
 ): KeyAttestationFailureReason => {
 
-    // challenge: string;
+    // Challenge
 
     const instructedChallenge = Buffer.from(instruction.challenge, 'hex');
     const attestedChallenge = Buffer.from(attested.attestationChallenge, 'hex');
 
-    if (!instructedChallenge.compare(attestedChallenge)) {
+    if (instructedChallenge.compare(attestedChallenge) != 0) {
         console.log(`challenge failed: instructed ${instructedChallenge.toString('hex')
             }, attested ${attestedChallenge.toString('hex')}`);
 
         return KeyAttestationFailureReason.ChallengeFailed;
     }
 
-    // purpose: KeyPurpose;
+    // Key Purpose
 
-    // TODO CONTINUE HERE...
-
-    //const instructedKeyPurpose = 
+    if (attested.teeEnforced.purpose.length > 1) {
+        console.log(`generated key has multiple purposes: ${
+            attested.teeEnforced.purpose.join(', ')}, expected purpose: ${instruction.purpose}`);
         
+        return KeyAttestationFailureReason.MultiPurposeKeyNotAllowed;
+    }
+
+    const purpose = attested.teeEnforced.purpose[0];
+    if (instruction.purpose != purpose) {
+        console.log(`unexpected purpose ${purpose}, expected ${instruction.purpose}`);
+
+        return KeyAttestationFailureReason.UnexpectedKeyPurpose;
+    }
+
+    // Key Size
+
+    if (attested.teeEnforced.keySize != instruction.sizeInBits) {
+        console.log(`unexpected key size ${attested.teeEnforced.keySize}, expected ${instruction.sizeInBits}`);
+
+        return KeyAttestationFailureReason.UnexpectedKeySize;
+    }
+
+    // Digest
+
+    if (attested.teeEnforced.digest.length > 1) {
+        console.log(`generated key supports multiple digests: ${
+            attested.teeEnforced.digest.join(', ')}, expected purpose: ${instruction.digest}`);
+        
+        return KeyAttestationFailureReason.KeyNotAllowedToSupportMultipleDigests;
+    }
+
+    const digest = attested.teeEnforced.digest[0];
+    if (instruction.digest != digest) {
+        console.log(`unexpected digest ${digest}, expected ${instruction.digest}`);
+
+        return KeyAttestationFailureReason.UnexpectedKeyDigest;
+    }
+
+
+    // Padding
+
+    if (attested.teeEnforced.padding.length > 1) {
+        console.log(`generated key supports multiple paddings: ${
+            attested.teeEnforced.padding.join(', ')}, expected: ${instruction.padding}`);
+        
+        return KeyAttestationFailureReason.KeyNotAllowedToSupportMultiplePaddings;
+    }
+
+    const padding = attested.teeEnforced.padding[0];
+    if (instruction.padding != padding) {
+        console.log(`unexpected padding ${padding}, expected ${instruction.padding}`);
+
+        return KeyAttestationFailureReason.UnexpectedKeyPadding;
+    }
+
+    // TODO
+
+    // requireHSM => must be strongbox
     
-    // sizeInBits: number;
-    // serialNumber: number;
-
-    // lifetimeMinutes: number;
-    // digest: Digest;
-    // padding: Padding;
-
+    // RSA, EC
     // rsaExponent: number;
     // ecCurve: string;
 
-    return null;
+    // basic cert
+    //
+    // serialNumber: number;
+    // lifetimeMinutes: number;
+
+    return KeyAttestationFailureReason.None;
 };
 
 export const getKeyDescriptionFromAttestationExtension = (
@@ -169,22 +316,14 @@ export const attestHardwareKey = async (
 
     describe(stripped, 0, enumMapLookup);
 
-    const keyIsValidAsGenerated = validateAttestedDataAgainstInstruction(
+    const keyDeviation = validateAttestedDataAgainstInstruction(
         record.keyParams,
         keyDescription
     );
 
-    // TODO check
-
-    // teeEnforced
-    // purpose: Encrypt
-    // algorithm RSA
-    // keySize 2048
-    // digest: SHA_2_512
-    // padding: RSA_PKCS1_1_5_ENCRYPT
-    // rsaPublicExponent 65537
-    // origin GENERATED
-    // noAuthRequired true
+    if (keyDeviation != KeyAttestationFailureReason.None) {
+        console.log(`key as generated does not match instructions: ${keyDeviation}`);
+    }
 
     // TODO update record
 
@@ -192,99 +331,5 @@ export const attestHardwareKey = async (
         error: null,
         reference: record.reference,
         succeeded: true
-    }
-};
-
-export const initiateKeyAttestation = async (
-    deviceFingerprint: IDeviceFingerprint
-): Promise<IInitKeyAttestationResult> => {
-
-    // check min requirements (e.g. OS level) based on fingerprint
-    //
-    if (deviceFingerprint.apiLevel < minDeviceRequirements.apiLevel) {
-        console.log(`device os api level (${deviceFingerprint.apiLevel}) is not sufficient, minimum is ${minDeviceRequirements.apiLevel}`)
-        return {
-            succeeded: false,
-            failureReason: InitKeyAttestationFailureReason.InsufficientApiLevel,
-            keyParams: null,
-            reference: null
-        }
-    }
-
-    // create random challenge for hw key attestation
-    //
-    let challenge: Buffer = null;
-    try {
-        challenge = await randomBytesAsync(8);
-    } catch (e) {
-        console.error('error getting random bytes for challenge', e);
-        return {
-            succeeded: false,
-            failureReason: InitKeyAttestationFailureReason.NoSourceOfRandomness,
-            keyParams: null,
-            reference: null
-        } 
-    }
-  
-    // persist request with nonces, returning reg ID (not DB id)
-
-    // const keyParams: IAsymKeyParams = {
-    //     requireHSM: false,
-    //     algorithm: Algorithm.RSA,
-    //     challenge: challenge.toString('hex'),
-    //     lifetimeMinutes: 60,
-    //     digest: Digest.SHA_2_512,
-    //     ecCurve: null,
-    //     padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
-    //     purpose: KeyPurpose.Encrypt,
-    //     rsaExponent: 65537,
-    //     serialNumber: 1,
-    //     sizeInBits: 2048
-    // };
-    
-    const keyParams: IAsymKeyParams = {
-        requireHSM: false,
-        algorithm: Algorithm.EC,
-        challenge: challenge.toString('hex'),
-        lifetimeMinutes: 60,
-        digest: Digest.SHA_2_512,
-        ecCurve: 'secp256r1',
-        padding: Padding.RSA_PKCS1_1_5_ENCRYPT,
-        purpose: KeyPurpose.Encrypt,
-        rsaExponent: 65537,
-        serialNumber: 1,
-        sizeInBits: 256
-    };
-
-    const record: IKeyAttestationRecord = {
-        id: v4(),
-        reference: v4(),
-
-        keyParams, 
-        chain: null,
-        claims: null,        
-    
-        attested: null,
-        error: null
-    };
-
-    let persisted = false;
-    try {
-        persisted = await setKeyAttRecord(record);
-    } catch (e) {
-        console.error('error persisting AttestationRecord', e);
-        return {
-            succeeded: false,
-            failureReason: InitKeyAttestationFailureReason.DataAccessLayerError,
-            keyParams: null,
-            reference: null
-        }
-    }
-
-    return {
-        succeeded: persisted,
-        failureReason: null,
-        keyParams,
-        reference: record.reference
     }
 };

@@ -1,4 +1,5 @@
 export enum KeyAttestationFailureReason {
+    None,
     InsufficientApiLevel,
     BannedAndroidID,
     TrustChainDoesNotContainARoot,
@@ -11,5 +12,12 @@ export enum KeyAttestationFailureReason {
     TrustChainContainsARevokedElement,
     TrustChainContainsAnInternalNodeWithoutSigningRights,
     KeyAttestationCertHasNoAttestationExtension,
-    ChallengeFailed
+    ChallengeFailed,
+    MultiPurposeKeyNotAllowed,
+    UnexpectedKeyPurpose,
+    UnexpectedKeySize,
+    KeyNotAllowedToSupportMultipleDigests,
+    UnexpectedKeyDigest,
+    KeyNotAllowedToSupportMultiplePaddings,
+    UnexpectedKeyPadding
 }
