@@ -1,5 +1,11 @@
 # indrajala-fluid-server
 
+nodejs typescript server    
+demonstrates hardware key attestation  
+used in conjunction with indrajala-fluid-client  
+  
+keywords:  android, kotlin, cryptography, hardware key attestation
+
 ## TODO
 
 TEE - SBOX
